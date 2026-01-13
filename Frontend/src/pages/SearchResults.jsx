@@ -3,7 +3,7 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom"; // useNav
 import { useEffect, useState, useMemo, useContext } from "react"; // useContext add kiya
 import { CartContext } from "../App"; // CartContext import kiya
 import Navbar from "../Components/Navbar";
-import Footer from "../components/Footer";
+import Footer from "../Components/Footer";
 
 
 export default function SearchResults() {

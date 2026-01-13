@@ -21,25 +21,21 @@ export default function AuthPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
-  const [error, setError] = useState(""); // New state for error messages
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  // Password validation regex: min 8, at least 1 uppercase, at least 1 special char
   const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[\W_]).{8,}$/;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(""); // clear previous errors
+    setError(""); 
     setIsLoading(true);
 
-    // Frontend password validation
     if (mode === "register") {
       if (!PASSWORD_REGEX.test(password)) {
         setIsLoading(false);
-        setError(
-          "Password must be at least 8 characters long and include an uppercase letter and a special character."
-        );
+        setError("Password must be at least 8 characters long and include an uppercase letter and a special character.");
         return;
       }
       if (password !== confirmPassword) {
@@ -68,14 +64,31 @@ export default function AuthPage() {
 
       if (!response.ok) throw new Error(data.message || "Failed");
 
-      // Save token
+      // --- CRITICAL LOGIC START ---
+
+      // 1. Save token
       localStorage.setItem("userToken", data.token);
 
+      // 2. Save full user object (important for Navbar login check)
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // 3. Save preferences (if any)
+      const userPrefs = data.user?.preferences || [];
+      localStorage.setItem("user_preferences", JSON.stringify(userPrefs));
+
+      // 4. Navigation
       if (mode === "register") {
         navigate("/preferences");
       } else {
-        navigate("/");
+        if (userPrefs.length > 0) {
+          navigate("/customer-dashboard");
+        } else {
+          navigate("/preferences");
+        }
       }
+
+      // --- CRITICAL LOGIC END ---
+
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -109,7 +122,6 @@ export default function AuthPage() {
               </p>
             </div>
 
-            {/* Error message */}
             {error && (
               <div className="mb-4 p-3 rounded-md bg-red-100 text-red-700 text-sm font-medium">
                 {error}

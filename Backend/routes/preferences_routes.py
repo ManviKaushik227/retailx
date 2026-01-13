@@ -9,7 +9,7 @@ load_dotenv()
 # MongoDB connection
 MONGO_URI = os.getenv("MONGO_URI") or "mongodb://localhost:27017"
 client = pymongo.MongoClient(MONGO_URI)
-db = client["retailx"]
+db = client["retailxDB"]
 users_collection = db["users"]
 
 preferences_bp = Blueprint("preferences", __name__, url_prefix="/api")

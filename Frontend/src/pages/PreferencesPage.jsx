@@ -1,15 +1,14 @@
-import { useState,useEffect  } from "react";
+
+
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-
 import {
   Check,
   ArrowRight,
   Sparkles,
   Tag
 } from "lucide-react";
-
-
 
 const CATEGORIES = [
   "Fashion", "Electronics", "Grocery", "Beauty", "Home & Living", "Sports",
@@ -30,15 +29,14 @@ const CATEGORIES = [
 export default function PreferencesPage() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
-
   const navigate = useNavigate();
 
-useEffect(() => {
-  const token = localStorage.getItem("userToken");
-  if (!token) {
-    navigate("/auth");
-  }
-}, []);
+  useEffect(() => {
+    const token = localStorage.getItem("userToken");
+    if (!token) {
+      navigate("/auth");
+    }
+  }, [navigate]);
 
   const toggleCategory = (category) => {
     setSelectedCategories((prev) =>
@@ -58,6 +56,7 @@ useEffect(() => {
 
       if (!token) {
         alert("Please login again");
+        navigate("/auth");
         return;
       }
 
@@ -75,8 +74,12 @@ useEffect(() => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
 
-      alert("Preferences saved successfully 🎉");
-      navigate("/");
+      // --- REQUIRED CHANGE 1: Save to localStorage for Dashboard ---
+      localStorage.setItem("user_preferences", JSON.stringify(selectedCategories));
+
+      // --- REQUIRED CHANGE 2: Navigate to Dashboard instead of Landing Page ---
+      navigate("/customer-dashboard");
+      
     } catch (err) {
       alert(err.message || "Failed to save preferences");
     } finally {

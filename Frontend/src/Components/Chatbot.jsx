@@ -133,7 +133,7 @@ const Chatbot = () => {
 
     try {
       // Best practice: Use localhost for frontend fetch
-      const res = await fetch('http://localhost:5000/chat', {
+      const res = await fetch('http://localhost:5000/api/chat/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input }),

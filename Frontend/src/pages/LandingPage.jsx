@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShoppingBag, Sparkles, Plus, Instagram, Twitter, Facebook } from "lucide-react";
@@ -8,7 +6,6 @@ import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
 import Chatbot from "../Components/Chatbot";
 import { useNavigate } from "react-router-dom";
-
 
 const SLIDES = [
   { 
@@ -34,7 +31,17 @@ const SLIDES = [
 export default function RetailXHome() {
   const [index, setIndex] = useState(0);
   const navigate = useNavigate(); 
-  // Auto-play timer: 7 seconds for a relaxed professional feel
+
+  // --- NEW: AUTH PROTECTION LOGIC ---
+  useEffect(() => {
+    const user = localStorage.getItem('user');
+    // Agar user login hai, toh usse landing page mat dikhao, seedha dashboard bhejo
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
+
+  // Auto-play timer
   useEffect(() => {
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % SLIDES.length);
@@ -57,7 +64,6 @@ export default function RetailXHome() {
             transition={{ duration: 1.5, ease: "easeInOut" }}
             className="absolute inset-0 w-full h-full"
           >
-            {/* Background Image Layer */}
             <motion.div 
               initial={{ scale: 1.1 }}
               animate={{ scale: 1 }}
@@ -69,11 +75,9 @@ export default function RetailXHome() {
                 className="w-full h-full object-cover" 
                 alt="RetailX Hero" 
               />
-              {/* Dark Gradient Overlay for text readability */}
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
             </motion.div>
 
-            {/* Content Layer */}
             <div className="relative z-10 h-full max-w-7xl mx-auto px-8 md:px-12 flex flex-col justify-center">
               <motion.div
                 initial={{ y: 40, opacity: 0 }}
@@ -94,27 +98,26 @@ export default function RetailXHome() {
                   {SLIDES[index].desc}
                 </p>
                 <div className="flex flex-wrap gap-4 mt-8">
-  {/* Primary Button - Locked to Emerald */}
-  <Button 
-    className="rounded-full px-8 py-4 text-base bg-[#059669] hover:bg-[#10b981] text-white font-bold border-none transition-all active:scale-95 shadow-lg shadow-emerald-900/20"
-  >
-    Explore Drop
-  </Button>
-  
-  {/* Outline Button - Transparent with white border */}
-  <Button 
-    variant="outline" 
-    className="rounded-full px-8 py-4 text-base border-2 border-white/40 bg-transparent text-white backdrop-blur-sm hover:bg-white hover:text-black transition-all"
-  >
-    View Lookbook
-  </Button>
-</div>
+                  <Button 
+                    onClick={() => navigate("/auth")}
+                    className="rounded-full px-8 py-4 text-base bg-[#059669] hover:bg-[#10b981] text-white font-bold border-none transition-all active:scale-95 shadow-lg shadow-emerald-900/20"
+                  >
+                    Explore Drop
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="rounded-full px-8 py-4 text-base border-2 border-white/40 bg-transparent text-white backdrop-blur-sm hover:bg-white hover:text-black transition-all"
+                  >
+                    View Lookbook
+                  </Button>
+                </div>
               </motion.div>
             </div>
           </motion.div>
         </AnimatePresence>
 
-        {/* Slide Indicators - Modern Vertical Style */}
+        {/* Slide Indicators */}
         <div className="absolute right-8 md:right-12 bottom-12 flex items-center gap-6 z-30">
           <span className="text-white/40 font-mono text-sm">0{index + 1}</span>
           <div className="flex gap-3">
@@ -165,11 +168,13 @@ export default function RetailXHome() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 className="group cursor-pointer"
+                onClick={() => navigate("/auth")}
               >
                 <div className="relative overflow-hidden bg-slate-50 aspect-[3/4] rounded-[32px]">
                   <img 
                     src={`/Products/product${i}.jpeg`} 
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
+                    alt="Product"
                   />
                   <button className="absolute bottom-6 right-6 bg-white text-black p-4 rounded-full shadow-2xl opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
                     <Plus size={24} />
@@ -201,11 +206,9 @@ export default function RetailXHome() {
                 placeholder="Enter your email" 
                 className="bg-white/5 border border-white/10 px-8 py-5 rounded-full text-white w-full sm:w-96 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
               />
-              
-              <Button onClick={() => navigate("/auth")}className="bg-[#37cd9e] text-white rounded-full px-8 py-4 font-bold hover:bg-[#059669] w-full sm:w-auto transition-all duration-300 active:scale-95 shadow-xl shadow-slate-900/10 border-none"
->
-Join RetailX
-</Button>
+              <Button onClick={() => navigate("/auth")} className="bg-[#37cd9e] text-white rounded-full px-8 py-4 font-bold hover:bg-[#059669] w-full sm:w-auto transition-all duration-300 active:scale-95 shadow-xl shadow-slate-900/10 border-none">
+                Join RetailX
+              </Button>
             </div>
           </div>
           <Chatbot />
