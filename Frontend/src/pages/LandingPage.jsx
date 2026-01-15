@@ -32,14 +32,14 @@ export default function RetailXHome() {
   const [index, setIndex] = useState(0);
   const navigate = useNavigate(); 
 
-  // --- NEW: AUTH PROTECTION LOGIC ---
-  useEffect(() => {
-    const user = localStorage.getItem('user');
-    // Agar user login hai, toh usse landing page mat dikhao, seedha dashboard bhejo
-    if (user) {
-      navigate('/dashboard');
-    }
-  }, [navigate]);
+  // // --- NEW: AUTH PROTECTION LOGIC ---
+  // useEffect(() => {
+  //   const user = localStorage.getItem('user');
+  //   // Agar user login hai, toh usse landing page mat dikhao, seedha dashboard bhejo
+  //   if (user) {
+  //     navigate('/dashboard');
+  //   }
+  // }, [navigate]);
 
   // Auto-play timer
   useEffect(() => {

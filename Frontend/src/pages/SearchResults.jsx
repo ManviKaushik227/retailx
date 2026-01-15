@@ -1,16 +1,19 @@
 
-import { useSearchParams, Link, useNavigate } from "react-router-dom"; // useNavigate add kiya
-import { useEffect, useState, useMemo, useContext } from "react"; // useContext add kiya
-import { CartContext } from "../App"; // CartContext import kiya
+
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { useEffect, useState, useMemo, useContext } from "react";
+// ✅ UPDATED: Path badal diya hai taaki error na aaye
+import { CartContext } from "../context/CartContext"; 
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
-
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q");
-  const navigate = useNavigate(); // Navigation ke liye
-  const { addToCart } = useContext(CartContext); // Global function use karne ke liye
+  const navigate = useNavigate();
+  
+  // ✅ UPDATED: Ab hum context se addToCart nikaal rahe hain
+  const { addToCart } = useContext(CartContext); 
   
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,19 +41,20 @@ export default function SearchResults() {
   }, [query]);
 
   // --- LOGIC: Add to Cart and Redirect ---
-  const handleAddToCart = (p) => {
+  const handleAddToCart = async (p) => {
+    // ✅ UPDATED: Backend model ke hisaab se data structure
     const productForCart = {
-      id: p.id,
+      _id: p.id || p._id, // MongoDB compatible ID
       name: p.name,
-      price: Number(p.finalPrice), // Cart page 'price' expect karta hai
-      originalPrice: Number( p.price),
-      image: p.images && p.images.length > 0 ? p.images[0] : "https://via.placeholder.com/200",
-      seller: "RetailX Seller", // Dummy seller
+      price: Number(p.finalPrice), 
       brand: p.brand
     };
     
-    addToCart(productForCart); // Global state update
-    navigate("/cart"); // Cart page par bhejo
+    // Global addToCart call (Ye ab backend pe data bhejta hai)
+    await addToCart(productForCart); 
+    
+    // Direct cart par bhej do
+    navigate("/cart"); 
   };
 
   const brands = useMemo(() => {
@@ -150,7 +154,6 @@ export default function SearchResults() {
                     </Link>
 
                     <div className="px-4 pb-4">
-                      {/* --- Update: OnClick call handleAddToCart --- */}
                       <button 
                         onClick={() => handleAddToCart(p)}
                         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg text-sm font-medium transition-colors"

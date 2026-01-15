@@ -4,6 +4,9 @@ from extensions import bcrypt
 from models.admin_model import Admin
 import os
 import re
+from dotenv import load_dotenv
+load_dotenv()
+
 
 admin_bp = Blueprint("admin", __name__)
 
