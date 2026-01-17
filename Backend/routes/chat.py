@@ -35,85 +35,159 @@ def extract_json_from_text(text: str):
 # UPGRADED INTENT EXTRACTION
 # ======================================================
 def extract_intent_with_ai(user_message: str):
-    intent = {
-        "category": None,
-        "max_price": None,
-        "brand": None,
-        "use_case": None
+    intent = {"category": None, "max_price": None, "brand": None, "use_case": None}
+    msg_lower = user_message.lower()
+
+    # --- STEP A: LOCAL KEYWORDS (Isse koi AI ki zarurat nahi padegi) ---
+    # Database ki categories ke hisab se yahan keywords daal do
+    category_map = {
+        "Toys": ["toy", "kids", "game", "doll", "puzzle", "board game", "playing"],
+        "Electronics": ["laptop", "phone", "mobile", "gadget", "watch", "tv", "earbuds"],
+        "Beauty": ["lipstick", "cream", "makeup", "skin", "serum", "face", "shampoo"],
+        "Fashion": ["shirt", "tshirt", "jeans", "dress", "clothing", "top", "pant"],
+        "Snacks": ["snacks", "chips", "biscuit", "chocolate", "food", "namkeen", "kurkure"]
     }
 
-    # RULE BASED PRICE (Fast & Reliable)
-    price_match = re.search(
-        r"(under|below|max|upto|up to|budget)\s*₹?\s*(\d+)",
-        user_message.lower()
-    )
+    # User ke message ko tod kar keywords se match karo
+    words_in_message = msg_lower.split()
+    for cat, keywords in category_map.items():
+        # Agar koi bhi keyword message mein mil jaye
+        if any(kw in msg_lower for kw in keywords):
+            intent["category"] = cat
+            break
+
+    # Price logic
+    price_match = re.search(r"(under|below|max|upto|up to|budget)\s*₹?\s*(\d+)", msg_lower)
     if price_match:
         intent["max_price"] = int(price_match.group(2))
 
-    # AI ENHANCEMENT (Multi-Category Support)
+    # --- STEP B: AI ENHANCEMENT (Sirf tab chalega jab quota ho) ---
     try:
-        prompt = f"""
-        Analyze this shopping query: "{user_message}"
-        Identify:
-        1. category (e.g., electronics, footwear, beauty, etc.)
-        2. max_price (numeric only)
-        3. brand
-        4. use_case (e.g., gaming, wedding, office)
-
-        Return ONLY a clean JSON object. If a field is unknown, use null.
-        """
-
-        response = client_ai.models.generate_content(
-            model="gemini-2.0-flash", # Updated to stable version
-            contents=prompt
-        )
-
+        prompt = f"Extract shopping intent: category, brand, price from '{user_message}'. Return JSON."
+        response = client_ai.models.generate_content(model="gemini-2.0-flash", contents=prompt)
         ai_intent = extract_json_from_text(response.text)
-
         if ai_intent:
             for key in intent:
-                # Sirf tab update karein agar AI ne value di ho aur rule-based ne pehle na dhunda ho
-                if ai_intent.get(key) is not None:
+                if ai_intent.get(key) and intent[key] is None: # Sirf tab update karo agar local ne nahi dhunda
                     intent[key] = ai_intent[key]
-
-    except Exception as e:
-        print("Intent AI Error:", e)
+    except Exception:
+        print(f"DEBUG: AI failed, using Local Intent: {intent}")
 
     return intent
+
+# def extract_intent_with_ai(user_message: str):
+#     intent = {
+#         "category": None,
+#         "max_price": None,
+#         "brand": None,
+#         "use_case": None
+#     }
+
+#     # RULE BASED PRICE (Fast & Reliable)
+#     price_match = re.search(
+#         r"(under|below|max|upto|up to|budget)\s*₹?\s*(\d+)",
+#         user_message.lower()
+#     )
+#     if price_match:
+#         intent["max_price"] = int(price_match.group(2))
+
+#     # AI ENHANCEMENT (Multi-Category Support)
+#     try:
+#         prompt = f"""
+#         Analyze this shopping query: "{user_message}"
+#         Identify:
+#         1. category (e.g., electronics, footwear, beauty, etc.)
+#         2. max_price (numeric only)
+#         3. brand
+#         4. use_case (e.g., gaming, wedding, office)
+
+#         Return ONLY a clean JSON object. If a field is unknown, use null.
+#         """
+
+#         response = client_ai.models.generate_content(
+#             model="gemini-2.0-flash", # Updated to stable version
+#             contents=prompt
+#         )
+
+#         ai_intent = extract_json_from_text(response.text)
+
+#         if ai_intent:
+#             for key in intent:
+#                 # Sirf tab update karein agar AI ne value di ho aur rule-based ne pehle na dhunda ho
+#                 if ai_intent.get(key) is not None:
+#                     intent[key] = ai_intent[key]
+
+#     except Exception as e:
+#         print("Intent AI Error:", e)
+
+#     return intent
 
 # ======================================================
 # DATABASE QUERY
 # ======================================================
+# def get_products_from_db(intent: dict):
+#     try:
+#         query = {"isActive": True}
+
+#         if intent.get("category"):
+#             query["category"] = {"$regex": intent["category"], "$options": "i"}
+
+#         if intent.get("brand"):
+#             query["brand"] = {"$regex": intent["brand"], "$options": "i"}
+
+#         if intent.get("max_price"):
+#             query["finalPrice"] = {"$lte": int(intent["max_price"])}
+
+#         results = list(mongo.db.products.find(query).limit(5))
+
+#         if not results:
+#             return None # Khali inventory return karein
+
+#         context = ""
+#         for p in results:
+#             context += (
+#                 f"- **{p.get('name')}** | Brand: {p.get('brand')}\n"
+#                 f"  Price: ₹{p.get('finalPrice')} | Rating: {p.get('rating')}⭐\n"
+#                 f"  Highlight: {p.get('aiMetadata', {}).get('use', 'Premium Quality')}\n\n"
+#             )
+#         return context
+
+#     except Exception as e:
+#         print("DB Fetch Error:", e)
+#         return "Error fetching product data."
+
 def get_products_from_db(intent: dict):
     try:
-        query = {"isActive": True}
+        # AGAR INTENT KHALI HAI (category is None)
+        if not intent.get("category"):
+            print("DEBUG: Category not identified. Skipping DB search.")
+            return None
 
-        if intent.get("category"):
-            query["category"] = {"$regex": intent["category"], "$options": "i"}
-
-        if intent.get("brand"):
-            query["brand"] = {"$regex": intent["brand"], "$options": "i"}
+        query = {
+            "isActive": True,
+            "$or": [
+                {"category": {"$regex": intent["category"], "$options": "i"}},
+                {"name": {"$regex": intent["category"], "$options": "i"}}
+            ]
+        }
 
         if intent.get("max_price"):
             query["finalPrice"] = {"$lte": int(intent["max_price"])}
 
+        print(f"DEBUG: Running MongoDB Query -> {query}")
         results = list(mongo.db.products.find(query).limit(5))
-
+        
         if not results:
-            return None # Khali inventory return karein
+            return None
 
         context = ""
         for p in results:
-            context += (
-                f"- **{p.get('name')}** | Brand: {p.get('brand')}\n"
-                f"  Price: ₹{p.get('finalPrice')} | Rating: {p.get('rating')}⭐\n"
-                f"  Highlight: {p.get('aiMetadata', {}).get('use', 'Premium Quality')}\n\n"
-            )
+            context += f"- **{p.get('name')}** (₹{p.get('finalPrice')}) | Cat: {p.get('category')}\n\n"
         return context
 
     except Exception as e:
-        print("DB Fetch Error:", e)
-        return "Error fetching product data."
+        print(f"DB Error: {e}")
+        return None
 
 # ======================================================
 # CHAT ENDPOINT
@@ -130,42 +204,85 @@ def chat_endpoint():
 
         user_message = data["message"].strip()
 
-        # 1. Intent Nikalna
+        # 1. Intent Nikalna (Isme humne keyword fallback dala hua hai)
         intent = extract_intent_with_ai(user_message)
 
         # 2. Database se dhoondhna
         context_data = get_products_from_db(intent)
 
-        # 3. Final Persona Based Response
-        system_instruction = """
-        You are the 'RetailX Universal Shopping Expert'. 
-        Your knowledge spans across Electronics, Fashion, Beauty, Home Decor, and more.
-        
-        Rules:
-        - NEVER identify as just a 'beauty' or 'laptop' expert. You are a complete store assistant.
-        - If products are found: Present them professionally using bullet points.
-        - If NO products are found: Politely say we don't have that specific item in stock right now, but offer to help find something else in our other departments.
-        - Always use ₹ for currency and ⭐ for ratings.
-        - Keep responses concise and friendly.
-        """
+        # 3. Final Response Logic
+        # Agar AI Quota khatam hai, toh hum manual response bhejenge
+        try:
+            system_instruction = "You are a shopping assistant..."
+            final_prompt = f"{system_instruction}\nContext: {context_data}\nUser: {user_message}"
+            
+            response = client_ai.models.generate_content(
+                model="gemini-2.0-flash", # Ya jo bhi model tu use kar raha hai
+                contents=final_prompt
+            )
+            reply = response.text
+        except Exception as ai_err:
+            print(f"Final AI Response Failed: {ai_err}")
+            # AGAR AI FAIL HUA, TOH DIRECT DB DATA BHEJO
+            if context_data:
+                reply = f"Mujhe aapke liye kuch products mile hain:\n\n{context_data}"
+            else:
+                reply = "I'm sorry, humare paas abhi ye stock mein nahi hai. Kya aap kuch aur dekhna chahenge?"
 
-        final_prompt = f"""
-        {system_instruction}
-
-        Context:
-        - User Intent: {json.dumps(intent)}
-        - Inventory Data: {context_data if context_data else 'No matching products found in database.'}
-
-        User Query: {user_message}
-        """
-
-        response = client_ai.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=final_prompt
-        )
-
-        return jsonify({"reply": response.text})
+        return jsonify({"reply": reply})
 
     except Exception:
         traceback.print_exc()
-        return jsonify({"reply": "I'm having trouble connecting to my inventory. Please try again."}), 500
+        return jsonify({"reply": "Technical issue ki wajah se main connect nahi kar pa raha hoon."}), 500
+
+# @chat_bp.route("/", methods=["POST", "OPTIONS"])
+# def chat_endpoint():
+#     if request.method == "OPTIONS":
+#         return jsonify({"status": "ok"}), 200
+
+#     try:
+#         data = request.get_json()
+#         if not data or "message" not in data:
+#             return jsonify({"reply": "Invalid request"}), 400
+
+#         user_message = data["message"].strip()
+
+#         # 1. Intent Nikalna
+#         intent = extract_intent_with_ai(user_message)
+
+#         # 2. Database se dhoondhna
+#         context_data = get_products_from_db(intent)
+
+#         # 3. Final Persona Based Response
+#         system_instruction = """
+#         You are the 'RetailX Universal Shopping Expert'. 
+#         Your knowledge spans across Electronics, Fashion, Beauty, Home Decor, and more.
+        
+#         Rules:
+#         - NEVER identify as just a 'beauty' or 'laptop' expert. You are a complete store assistant.
+#         - If products are found: Present them professionally using bullet points.
+#         - If NO products are found: Politely say we don't have that specific item in stock right now, but offer to help find something else in our other departments.
+#         - Always use ₹ for currency and ⭐ for ratings.
+#         - Keep responses concise and friendly.
+#         """
+
+#         final_prompt = f"""
+#         {system_instruction}
+
+#         Context:
+#         - User Intent: {json.dumps(intent)}
+#         - Inventory Data: {context_data if context_data else 'No matching products found in database.'}
+
+#         User Query: {user_message}
+#         """
+
+#         response = client_ai.models.generate_content(
+#             model="gemini-2.5-flash",
+#             contents=final_prompt
+#         )
+
+#         return jsonify({"reply": response.text})
+
+#     except Exception:
+#         traceback.print_exc()
+#         return jsonify({"reply": "I'm having trouble connecting to my inventory. Please try again."}), 500

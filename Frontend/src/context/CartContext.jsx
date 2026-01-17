@@ -5,12 +5,13 @@ import Swal from "sweetalert2";
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
+  // Initial state ko backend se sync rakha hai (Budget ab null ho sakta hai)
   const [cartData, setCartData] = useState({
     items: [],
     spent: 0,
-    monthlyBudget: 2000,
+    monthlyBudget: null, // Default null, user set karega tabhi dikhega
     percentUsed: 0,
-    remaining: 2000
+    remaining: null
   });
 
   const getUserId = () => {
@@ -19,13 +20,14 @@ export const CartProvider = ({ children }) => {
   };
 
   /* =======================
-     FETCH CART
+      FETCH CART
      ======================= */
   const fetchCart = useCallback(async () => {
     const userId = getUserId();
     if (!userId) return;
     try {
       const res = await axios.get(`http://localhost:5000/api/cart?userId=${userId}`);
+      // Backend se items, spent, monthlyBudget, percentUsed, remaining sab ek saath aayega
       setCartData(res.data);
     } catch (err) {
       console.error("Cart fetch error:", err);
@@ -33,27 +35,40 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   /* =======================
-     UPDATE BUDGET
+      UPDATE BUDGET (Modified for Optional Budget)
      ======================= */
   const updateBudget = async (newLimit) => {
     const userId = getUserId();
     if (!userId) return;
 
     try {
+      // Agar newLimit null hai (yani user budget hata raha hai), toh null bhejo
+      const budgetValue = newLimit === null ? null : parseFloat(newLimit);
+      
       const res = await axios.post('http://localhost:5000/api/cart/budget', {
         userId,
-        monthlyBudget: parseFloat(newLimit)
+        monthlyBudget: budgetValue
       });
 
       setCartData(res.data);
 
-      Swal.fire({
-        icon: "success",
-        title: "Budget Updated",
-        text: "Your monthly budget has been updated successfully.",
-        timer: 1800,
-        showConfirmButton: false,
-      });
+      if (budgetValue !== null) {
+        Swal.fire({
+          icon: "success",
+          title: "Budget Updated",
+          text: "Your monthly budget has been updated successfully.",
+          timer: 1800,
+          showConfirmButton: false,
+        });
+      } else {
+        Swal.fire({
+          icon: "info",
+          title: "Budget Removed",
+          text: "Tracking disabled.",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
 
     } catch (err) {
       console.error("Budget update error:", err);
@@ -66,17 +81,13 @@ export const CartProvider = ({ children }) => {
   };
 
   /* =======================
-     ADD TO CART
+      ADD TO CART (Kept original logic)
      ======================= */
   const addToCart = async (product) => {
     const userId = getUserId();
 
     if (!userId) {
-      Swal.fire({
-        icon: "warning",
-        title: "Login Required",
-        text: "Please login to add items to your cart.",
-      });
+      Swal.fire({ icon: "warning", title: "Login Required", text: "Please login to add items." });
       return;
     }
 
@@ -93,26 +104,19 @@ export const CartProvider = ({ children }) => {
       });
 
       setCartData(res.data);
-
-      Swal.fire({
-        icon: "success",
-        title: "Added to Cart",
-        text: "The product has been added to your cart.",
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      Swal.fire({ icon: "success", title: "Added to Cart", timer: 1500, showConfirmButton: false });
 
     } catch (err) {
       Swal.fire({
         icon: "error",
         title: "Cannot Add Product",
-        text: err.response?.data?.error || "Something went wrong. Please try again.",
+        text: err.response?.data?.error || "Budget might be exceeded.",
       });
     }
   };
 
   /* =======================
-     UPDATE QUANTITY
+      UPDATE QUANTITY (Sync with Backend Model)
      ======================= */
   const updateQuantity = async (productId, newQuantity) => {
     const userId = getUserId();
@@ -124,20 +128,14 @@ export const CartProvider = ({ children }) => {
         productId,
         quantity: newQuantity
       });
-
       setCartData(res.data);
-
     } catch (err) {
-      Swal.fire({
-        icon: "error",
-        title: "Update Failed",
-        text: err.response?.data?.error || "Unable to update product quantity.",
-      });
+      Swal.fire({ icon: "error", title: "Update Failed", text: "Unable to update quantity." });
     }
   };
 
   /* =======================
-     REMOVE FROM CART
+      REMOVE FROM CART
      ======================= */
   const removeFromCart = async (productId) => {
     const userId = getUserId();
@@ -148,30 +146,14 @@ export const CartProvider = ({ children }) => {
         userId,
         productId
       });
-
       setCartData(res.data);
-
     } catch (err) {
       console.error("Remove error:", err);
-      Swal.fire({
-        icon: "error",
-        title: "Removal Failed",
-        text: "Unable to remove item from cart.",
-      });
     }
   };
 
-  /* =======================
-     EFFECTS
-     ======================= */
   useEffect(() => {
     fetchCart();
-  }, [fetchCart]);
-
-  useEffect(() => {
-    const handleStorageChange = () => fetchCart();
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, [fetchCart]);
 
   return (
