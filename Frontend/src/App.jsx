@@ -13,6 +13,10 @@ import AdminAuth from "./pages/AdminAuth";
 import AdminDashboard from "./pages/AdminDashboard";
 import SellerAuth from "./pages/SellerAuth";
 import SellerDashboard from "./pages/SellerDashboard";
+import Checkout from "./pages/Checkout";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import UserDashboard from "./pages/UserDashboard";
+import CategoryPage from "./pages/CategoryPage";
 
 function App() {
   return (
@@ -38,6 +42,16 @@ function App() {
           {/* ADMIN ROUTES */}
           <Route path="/admin-auth" element={<AdminAuth />} />
           <Route path="/admin" element={<AdminDashboard />} />
+
+
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+
+          <Route path="/dashboard" element={<UserDashboard />} />
+
+          <Route path="/category/:categoryName" element={<CategoryPage />} />
+
+
         </Routes>
       </BrowserRouter>
     </CartProvider>

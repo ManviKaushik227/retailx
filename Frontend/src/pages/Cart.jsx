@@ -3,7 +3,7 @@ import { CartContext } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 import {
   Trash2, ShoppingBag, ArrowRight, Minus, Plus,
-  ShieldCheck, Truck, Edit2, ShoppingCart, CreditCard, Info
+  ShieldCheck, Truck, Edit3, ShoppingCart, CreditCard, AlertCircle
 } from 'lucide-react';
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
@@ -21,50 +21,50 @@ const Cart = () => {
     const { value: newBudget } = await Swal.fire({
       title: "Update Monthly Budget",
       input: "number",
-      inputLabel: "Plan your expenses better",
+      inputLabel: "Set your monthly spending limit",
       inputValue: cartData.monthlyBudget,
-      showCancelButton: true,
+      confirmButtonText: "Update",
       confirmButtonColor: "#10b981",
+      showCancelButton: true,
+      customClass: {
+        popup: 'rounded-3xl',
+        confirmButton: 'rounded-xl px-6 py-2',
+        cancelButton: 'rounded-xl px-6 py-2'
+      }
     });
 
-    if (newBudget) {
-      updateBudget(newBudget);
-    }
+    if (newBudget) updateBudget(newBudget);
   };
 
   const handleRemoveItem = async (productId) => {
     const result = await Swal.fire({
-      title: "Remove from cart?",
-      text: "You can always add it back later.",
+      title: "Remove Item?",
+      text: "This item will be removed from your selection.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, Remove",
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#64748b",
+      confirmButtonText: "Remove",
+      confirmButtonColor: "#f43f5e",
+      cancelButtonColor: "#94a3b8",
       background: '#ffffff',
-      borderRadius: '20px'
+      customClass: { popup: 'rounded-3xl' }
     });
 
-    if (result.isConfirmed) {
-      removeFromCart(productId);
-    }
+    if (result.isConfirmed) removeFromCart(productId);
   };
 
   if (!cartData || !cartData.items || cartData.items.length === 0) {
     return (
       <div className="min-h-screen bg-[#f8fafc] flex flex-col">
         <Navbar />
-        <div className="flex-grow flex flex-col items-center justify-center p-6 text-center">
-          <div className="relative mb-8">
-             <div className="absolute -inset-4 bg-emerald-100 rounded-full blur-xl opacity-50 animate-pulse"></div>
-             <div className="relative w-32 h-32 bg-white shadow-2xl rounded-full flex items-center justify-center">
-                <ShoppingBag className="text-emerald-500" size={48} />
-             </div>
+        <div className="flex-grow flex flex-col items-center justify-center p-6">
+          <div className="w-64 h-64 bg-emerald-50 rounded-full flex items-center justify-center mb-8 relative">
+            <div className="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-20"></div>
+            <ShoppingBag size={80} className="text-emerald-500 relative z-10" />
           </div>
-          <h2 className="text-4xl font-black text-slate-900 mb-2">Your bag is empty.</h2>
-          <p className="text-slate-500 mb-10 text-lg max-w-sm">Looks like you haven't discovered our latest arrivals yet.</p>
-          <Link to="/" className="group flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold hover:bg-emerald-600 transition-all duration-300 shadow-xl hover:shadow-emerald-200">
-            Start Shopping <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+          <h2 className="text-3xl font-extrabold text-slate-900 mb-4">Your bag is empty</h2>
+          <p className="text-slate-500 mb-8 max-w-sm text-center">Give it some love and add some items that make you happy!</p>
+          <Link to="/" className="inline-flex items-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold hover:bg-emerald-600 transition-all shadow-xl hover:-translate-y-1">
+            Explore Collection <ArrowRight size={20} />
           </Link>
         </div>
         <Footer />
@@ -73,88 +73,86 @@ const Cart = () => {
   }
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen font-sans">
+    <div className="bg-[#f8fafc] min-h-screen">
       <Navbar />
 
-      {/* Main Content: pt-24 provides enough space for fixed navbar without pushing content too low */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-24">
-        
-        {/* HEADER SECTION - Reduced vertical padding and balanced layout */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-10 gap-6">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-widest">
-              <ShoppingCart size={12} /> My Selection
-            </div>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900">
-              Shopping <span className="text-emerald-600">Bag.</span>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20">
+        {/* Header Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 items-end">
+          <div className="lg:col-span-2">
+            <span className="text-emerald-600 font-bold tracking-widest text-xs uppercase mb-2 block">Premium Checkout</span>
+            <h1 className="text-5xl font-black text-slate-900 mb-4">
+              Your <span className="text-emerald-500 underline decoration-emerald-200 decoration-8 underline-offset-4">Bag.</span>
             </h1>
-            <p className="text-slate-500 text-sm md:text-base">
-              Review your items and proceed to a secure checkout.
-            </p>
+            <p className="text-slate-500 font-medium">You have {cartData.items.length} items in your selection.</p>
           </div>
-
-          {/* Budget Display - Compact for header alignment */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 min-w-[320px]">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Monthly Spending Goal</span>
-              <button onClick={handleEditBudget} className="text-emerald-600 hover:bg-emerald-50 p-1.5 rounded-lg transition-colors">
-                <Edit2 size={14} />
+          
+          <div className="bg-white border border-slate-200 p-6 rounded-[2rem] shadow-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Budget Health</h4>
+              <button onClick={handleEditBudget} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 hover:text-emerald-500 transition-colors">
+                <Edit3 size={16} />
               </button>
             </div>
             <BudgetTracker spent={cartData.spent} limit={cartData.monthlyBudget} />
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-10 items-start">
-          {/* ITEMS LIST */}
-          <div className="lg:w-2/3 w-full space-y-4">
+        <div className="flex flex-col lg:flex-row gap-12">
+          {/* Items List */}
+          <div className="lg:w-2/3 space-y-6">
             {cartData.items.map(item => (
-              <div key={item.productId} className="group bg-white rounded-3xl p-5 border border-slate-100 flex flex-col sm:flex-row gap-6 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300">
-                {/* Product Image */}
-                <div className="w-full sm:w-36 h-36 bg-slate-50 rounded-2xl overflow-hidden flex items-center justify-center p-4">
+              <div key={item.productId} className="group relative bg-white border border-slate-100 p-4 sm:p-6 rounded-[2.5rem] flex flex-col sm:flex-row gap-8 items-center transition-all hover:shadow-2xl hover:shadow-slate-200/60 hover:border-emerald-100">
+                {/* Image Wrap */}
+                <div className="w-full sm:w-44 h-44 bg-slate-50 rounded-[2rem] overflow-hidden p-6 flex items-center justify-center relative group-hover:bg-white transition-colors">
                   <img 
                     src={item.imageURL || item.image} 
                     alt={item.name}
-                    className="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
+                    className="max-w-full max-h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" 
                   />
                 </div>
 
-                {/* Product Info */}
-                <div className="flex-1 flex flex-col justify-between py-1">
-                  <div>
-                    <div className="flex justify-between items-start">
-                      <h3 className="text-lg font-bold text-slate-800 leading-tight mb-1">{item.name}</h3>
-                      <button 
-                        onClick={() => handleRemoveItem(item.productId)}
-                        className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                {/* Content Wrap */}
+                <div className="flex-1 w-full flex flex-col justify-between h-full">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-800 mb-1 group-hover:text-emerald-600 transition-colors">{item.name}</h3>
+                      <span className="text-slate-400 text-sm font-medium">SKU: {item.productId.slice(-6).toUpperCase()}</span>
                     </div>
-                    <p className="text-emerald-600 font-black text-2xl tracking-tight">₹{item.price.toLocaleString()}</p>
+                    <button 
+                      onClick={() => handleRemoveItem(item.productId)}
+                      className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all"
+                    >
+                      <Trash2 size={20} />
+                    </button>
                   </div>
 
-                  <div className="flex items-center justify-between mt-6">
-                    <div className="flex items-center bg-slate-50 rounded-xl p-1 border border-slate-100 shadow-sm">
-                      <button
-                        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all"
-                        disabled={item.quantity <= 1}
-                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                      >
-                        <Minus size={14} />
-                      </button>
-                      <span className="w-10 text-center font-bold text-slate-700">{item.quantity}</span>
-                      <button
-                        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white hover:shadow-sm transition-all"
-                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                      >
-                        <Plus size={14} />
-                      </button>
+                  <div className="flex flex-wrap items-end justify-between gap-4">
+                    <div className="space-y-3">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Quantity</p>
+                      <div className="flex items-center bg-slate-900 rounded-2xl p-1 shadow-inner">
+                        <button
+                          className="w-10 h-10 flex items-center justify-center text-white hover:text-emerald-400 disabled:opacity-30"
+                          disabled={item.quantity <= 1}
+                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <span className="w-8 text-center font-bold text-white text-lg">{item.quantity}</span>
+                        <button
+                          className="w-10 h-10 flex items-center justify-center text-white hover:text-emerald-400"
+                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
                     </div>
-                    
+
                     <div className="text-right">
-                       <p className="text-[10px] uppercase text-slate-400 font-bold">Subtotal</p>
-                       <p className="font-bold text-slate-800">₹{(item.price * item.quantity).toLocaleString()}</p>
+                      <p className="text-slate-400 text-sm font-medium mb-1">Price per unit: ₹{item.price.toLocaleString()}</p>
+                      <p className="text-3xl font-black text-slate-900 tracking-tight">
+                        ₹{(item.price * item.quantity).toLocaleString()}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -162,48 +160,62 @@ const Cart = () => {
             ))}
           </div>
 
-          {/* CHECKOUT SIDEBAR */}
-          <aside className="lg:w-1/3 w-full lg:sticky lg:top-24">
-            <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-2xl shadow-slate-200/50">
-              <h2 className="text-xl font-black text-slate-900 mb-8">Order Summary</h2>
+          {/* Checkout Panel */}
+          <aside className="lg:w-1/3">
+            <div className="bg-white border border-slate-200 rounded-[3rem] p-10 lg:sticky lg:top-28 shadow-xl shadow-slate-200/40">
+              <h2 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                <CreditCard className="text-emerald-500" /> Summary
+              </h2>
               
-              <div className="space-y-4 mb-8 text-sm">
-                <div className="flex justify-between text-slate-500 font-medium">
+              <div className="space-y-5 mb-10">
+                <div className="flex justify-between text-slate-500 font-semibold">
                   <span>Subtotal</span>
-                  <span className="text-slate-900 font-bold">₹{cartData.spent?.toLocaleString()}</span>
+                  <span className="text-slate-900">₹{cartData.spent?.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-slate-500 font-medium">
-                  <span>Shipping Estimate</span>
-                  <span className="text-emerald-600 font-bold uppercase text-[10px] bg-emerald-50 px-2 py-0.5 rounded">Free</span>
+                <div className="flex justify-between text-slate-500 font-semibold">
+                  <span>Shipping</span>
+                  <span className="text-emerald-500 font-bold italic">Calculated at next step</span>
                 </div>
-                <div className="pt-6 border-t border-slate-100 flex justify-between items-center">
-                  <div className="text-slate-900 font-bold text-lg">Total Amount</div>
-                  <div className="text-slate-900 font-black text-2xl">₹{cartData.spent?.toLocaleString()}</div>
+                <div className="flex justify-between text-slate-500 font-semibold">
+                  <span>Tax (GST)</span>
+                  <span className="text-slate-900">Inclusive</span>
+                </div>
+                
+                <div className="h-px bg-slate-100 my-6"></div>
+                
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-bold text-slate-900">Grand Total</span>
+                  <span className="text-4xl font-black text-emerald-600 tracking-tighter">
+                    ₹{cartData.spent?.toLocaleString()}
+                  </span>
                 </div>
               </div>
 
               <Link to="/checkout" state={{ total: cartData.spent }}>
-                <button className="group w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-emerald-600 transition-all duration-300 shadow-lg hover:shadow-emerald-200 flex items-center justify-center gap-3">
-                  Checkout Now
-                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                <button className="group w-full bg-slate-900 text-white py-5 rounded-[2rem] font-bold text-xl hover:bg-emerald-600 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-emerald-200/40 active:scale-95">
+                  Confirm Order
+                  <ArrowRight size={22} className="group-hover:translate-x-2 transition-transform" />
                 </button>
               </Link>
 
-              <div className="mt-8 flex flex-col gap-3">
-                 <div className="flex items-center gap-3 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl">
-                    <Truck size={16} className="text-emerald-500" />
-                    Express Delivery Included
-                 </div>
-                 <div className="flex items-center gap-3 text-xs font-bold text-slate-500 bg-slate-50 p-3 rounded-xl">
-                    <ShieldCheck size={16} className="text-emerald-500" />
-                    Verified Secure Checkout
-                 </div>
+              <div className="mt-10 grid grid-cols-2 gap-4">
+                <div className="flex flex-col items-center gap-2 p-4 bg-slate-50 rounded-3xl text-center">
+                  <Truck size={20} className="text-emerald-500" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Fast Delivery</span>
+                </div>
+                <div className="flex flex-col items-center gap-2 p-4 bg-slate-50 rounded-3xl text-center">
+                  <ShieldCheck size={20} className="text-emerald-500" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Secure Pay</span>
+                </div>
               </div>
 
               {cartData.spent > cartData.monthlyBudget && (
-                <div className="mt-6 bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl text-[11px] font-bold flex items-center gap-2 animate-pulse">
-                  <Info size={14} />
-                  Budget limit exceeded by ₹{(cartData.spent - cartData.monthlyBudget).toLocaleString()}
+                <div className="mt-8 bg-rose-50 border border-rose-100 p-5 rounded-3xl flex items-start gap-4">
+                  <AlertCircle className="text-rose-500 shrink-0" size={20} />
+                  <div>
+                    <p className="text-rose-600 font-bold text-sm">Budget Overrun!</p>
+                    <p className="text-rose-400 text-xs mt-1">You are ₹{(cartData.spent - cartData.monthlyBudget).toLocaleString()} over your limit.</p>
+                  </div>
                 </div>
               )}
             </div>
@@ -217,17 +229,3 @@ const Cart = () => {
 };
 
 export default Cart;
-
-
-
-
-
-
-
-
-
-
-
-
-
-

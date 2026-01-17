@@ -38,3 +38,18 @@ def get_all_products():
 def get_product_by_id(product_id):
     product = mongo.db.products.find_one({"_id": ObjectId(product_id)})
     return format_product(product)
+
+
+
+def get_products_by_category(category_name):
+    if not category_name:
+        return []
+
+    # Case-insensitive search: 'Electronics' aur 'electronics' dono chalenge
+    query = {
+        "category": {"$regex": f"^{category_name}$", "$options": "i"},
+        "isActive": True
+    }
+    
+    products_cursor = mongo.db.products.find(query)
+    return [format_product(p) for p in products_cursor]

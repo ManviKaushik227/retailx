@@ -18,10 +18,15 @@ from routes.chat import chat_bp
 from routes.recommendations import recommendation_bp
 from routes.cart_routes import cart_bp  # <--- UPDATED: Cart import kiya
 
+from routes.payment_routes import payment_bp
+from routes.user_routes import user_bp
+from routes.order import orders_bp
+
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app)
+# CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 
 # CONFIG
@@ -48,6 +53,10 @@ app.register_blueprint(product_bp, url_prefix="/api/products")
 app.register_blueprint(search_bp, url_prefix="/api/search")
 app.register_blueprint(chat_bp, url_prefix="/api/chat")
 app.register_blueprint(recommendation_bp, url_prefix="/api/recommendations")
+
+app.register_blueprint(payment_bp)
+app.register_blueprint(user_bp)
+app.register_blueprint(orders_bp)
 
 # UPDATED: Cart Blueprint register kiya (Iska prefix /api/cart already route file mein set hai)
 app.register_blueprint(cart_bp) 

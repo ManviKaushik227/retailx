@@ -37,12 +37,12 @@ export default function CategoryPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {products.map((product) => (
             <motion.div
-              key={product.name}
+              key={product.id}
               whileHover={{ y: -4 }}
               className="bg-white border rounded-2xl p-4 shadow-sm"
             >
               <img
-                src={product.image}
+                src={product.imageURL}
                 alt={product.name}
                 className="h-40 w-full object-cover rounded-xl mb-3"
               />
