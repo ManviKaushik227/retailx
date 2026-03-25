@@ -5,11 +5,10 @@ import Swal from "sweetalert2";
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  // Initial state ko backend se sync rakha hai (Budget ab null ho sakta hai)
   const [cartData, setCartData] = useState({
     items: [],
     spent: 0,
-    monthlyBudget: null, // Default null, user set karega tabhi dikhega
+    monthlyBudget: null,
     percentUsed: 0,
     remaining: null
   });
@@ -27,7 +26,6 @@ export const CartProvider = ({ children }) => {
     if (!userId) return;
     try {
       const res = await axios.get(`http://localhost:5000/api/cart?userId=${userId}`);
-      // Backend se items, spent, monthlyBudget, percentUsed, remaining sab ek saath aayega
       setCartData(res.data);
     } catch (err) {
       console.error("Cart fetch error:", err);
@@ -35,16 +33,14 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   /* =======================
-      UPDATE BUDGET (Modified for Optional Budget)
+      UPDATE BUDGET
      ======================= */
   const updateBudget = async (newLimit) => {
     const userId = getUserId();
     if (!userId) return;
 
     try {
-      // Agar newLimit null hai (yani user budget hata raha hai), toh null bhejo
       const budgetValue = newLimit === null ? null : parseFloat(newLimit);
-      
       const res = await axios.post('http://localhost:5000/api/cart/budget', {
         userId,
         monthlyBudget: budgetValue
@@ -52,54 +48,48 @@ export const CartProvider = ({ children }) => {
 
       setCartData(res.data);
 
-      if (budgetValue !== null) {
-        Swal.fire({
-          icon: "success",
-          title: "Budget Updated",
-          text: "Your monthly budget has been updated successfully.",
-          timer: 1800,
-          showConfirmButton: false,
-        });
-      } else {
-        Swal.fire({
-          icon: "info",
-          title: "Budget Removed",
-          text: "Tracking disabled.",
-          timer: 1500,
-          showConfirmButton: false,
-        });
-      }
+      Swal.fire({
+        icon: budgetValue !== null ? "success" : "info",
+        title: budgetValue !== null ? "Budget Updated" : "Budget Removed",
+        text: budgetValue !== null ? "Your monthly budget has been updated." : "Tracking disabled.",
+        timer: 1500,
+        showConfirmButton: false,
+      });
 
     } catch (err) {
       console.error("Budget update error:", err);
-      Swal.fire({
-        icon: "error",
-        title: "Update Failed",
-        text: "Unable to update budget. Please try again.",
-      });
+      Swal.fire({ icon: "error", title: "Update Failed", text: "Please try again." });
     }
   };
 
   /* =======================
-      ADD TO CART (Kept original logic)
+      ADD TO CART (Fixed logic for Search & Data Mapping)
      ======================= */
   const addToCart = async (product) => {
     const userId = getUserId();
+
+    // Mapping: Search results usually use 'productId', DB uses '_id' or 'id'
+    const finalProductId = product._id || product.id || product.productId;
 
     if (!userId) {
       Swal.fire({ icon: "warning", title: "Login Required", text: "Please login to add items." });
       return;
     }
 
+    if (!finalProductId) {
+      console.error("Critical Error: No Product ID found in object", product);
+      return;
+    }
+
     try {
       const res = await axios.post('http://localhost:5000/api/cart/add', {
         userId,
-        productId: product._id || product.id,
+        productId: finalProductId, // Sending the mapped ID
         name: product.name,
-        price: product.price || product.finalPrice,
-        imageURL: product.imageURL || product.image,
-        brand: product.brand,
-        category: product.category,
+        price: parseFloat(product.price || product.finalPrice || 0),
+        imageURL: product.imageURL || product.image || 'https://placehold.co/200',
+        brand: product.brand || "RetailX Collection",
+        category: product.category || "General",
         quantity: 1
       });
 
@@ -110,13 +100,13 @@ export const CartProvider = ({ children }) => {
       Swal.fire({
         icon: "error",
         title: "Cannot Add Product",
-        text: err.response?.data?.error || "Budget might be exceeded.",
+        text: err.response?.data?.error || "Check your budget or connection.",
       });
     }
   };
 
   /* =======================
-      UPDATE QUANTITY (Sync with Backend Model)
+      UPDATE QUANTITY
      ======================= */
   const updateQuantity = async (productId, newQuantity) => {
     const userId = getUserId();

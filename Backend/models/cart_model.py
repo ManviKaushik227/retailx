@@ -96,7 +96,7 @@ class Cart:
             return {"spent": 0, "remaining": None, "percentUsed": 0, "monthlyBudget": None}
         
         budget = cart.get("monthlyBudget")
-        spent = sum(item["price"] * item.get("quantity", 1) for item in cart.get("items", []))
+        spent =cart.get("spent", 0) 
         
         result = {
             "spent": spent,

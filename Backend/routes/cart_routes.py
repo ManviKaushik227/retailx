@@ -39,6 +39,9 @@ def add_item():
     if request.method == "OPTIONS": return handle_options()
     data = request.json
     user_id = data.get("userId")
+    # Safety Check: Agar userId nahi hai toh turant 400 return karo
+    if not user_id:
+        return jsonify({"error": "User session expired or ID missing"}), 400
     
     res, status = Cart.add_item(user_id, data)
     if status != 200: return jsonify(res), status
@@ -50,14 +53,19 @@ def update_quantity():
     if request.method == "OPTIONS": return handle_options()
     data = request.json
     user_id = data.get("userId")
+    product_id = data.get("productId")
     
-    # Model ki safety use karte huye update
-    mongo.db.carts.update_one(
-        {"userId": ObjectId(user_id), "items.productId": data.get("productId")},
-        {"$set": {"items.$.quantity": data.get("quantity"), "updatedAt": datetime.utcnow()}}
-    )
-    
-    return jsonify(get_cart_response(user_id))
+    if not user_id or not product_id:
+        return jsonify({"error": "Missing parameters"}), 400
+
+    try:
+        mongo.db.carts.update_one(
+            {"userId": ObjectId(user_id), "items.productId": product_id},
+            {"$set": {"items.$.quantity": int(data.get("quantity")), "updatedAt": datetime.utcnow()}}
+        )
+        return jsonify(get_cart_response(user_id))
+    except Exception as e:
+        return jsonify({"error": "Invalid User ID format"}), 400
 
 @cart_bp.route("/remove", methods=["POST", "OPTIONS"])
 def remove_item():

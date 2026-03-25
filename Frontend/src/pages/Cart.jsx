@@ -1,15 +1,12 @@
-import React, { useContext, useEffect } from 'react';
-import { CartContext } from '../context/CartContext';
-import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Trash2, ShoppingBag, ArrowRight, Minus, Plus,
-  ShieldCheck, Truck, Edit3, CreditCard, AlertCircle, Sparkles
-} from 'lucide-react';
+import React, { useContext, useEffect } from "react";
+import { CartContext } from "../context/CartContext";
+import { Link } from "react-router-dom";
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
 import BudgetTracker from "../Components/BudgetTracker";
+import { Minus, Plus, Trash2, ArrowRight, Edit3, AlertCircle, Tag } from "lucide-react";
 import Swal from "sweetalert2";
+import { motion, AnimatePresence } from "framer-motion";
 
 const Cart = () => {
   const { cartData, removeFromCart, updateQuantity, fetchCart, updateBudget } = useContext(CartContext);
@@ -18,56 +15,40 @@ const Cart = () => {
     fetchCart();
   }, [fetchCart]);
 
-  if (!cartData) {
-    return (
-      <div className="h-screen bg-[#FCFCF9] flex flex-col items-center justify-center">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="w-12 h-12 border-2 border-emerald-500 border-t-transparent rounded-full mb-8" />
-        <p className="text-[10px] font-bold uppercase tracking-[1em] text-slate-900">Curating Your Selection</p>
-      </div>
-    );
-  }
+  // Calculations
+  const currentCartTotal = cartData?.items?.reduce((acc, item) => acc + item.price * item.quantity, 0) || 0;
+  const realTimeSpent = (cartData?.spent || 0) + currentCartTotal;
+  const discount = currentCartTotal * 0.20; // 20% discount as shown in image
+  const deliveryFee = 15;
+  const finalTotal = currentCartTotal - discount + deliveryFee;
 
   const handleEditBudget = async () => {
     const { value: newBudget } = await Swal.fire({
-      title: "Budget Intelligence",
+      title: "Edit Monthly Budget",
       input: "number",
-      inputLabel: "Set your monthly spending limit",
       inputValue: cartData?.monthlyBudget || 2000,
-      confirmButtonText: "Save Limit",
-      confirmButtonColor: "#10b981",
       showCancelButton: true,
-      customClass: { popup: 'rounded-[30px] font-sans', confirmButton: 'rounded-full px-6 py-2' }
+      confirmButtonColor: "#000",
     });
     if (newBudget) updateBudget(newBudget);
   };
 
-  const handleRemoveItem = async (productId) => {
-    const result = await Swal.fire({
-      title: "Remove Piece?",
-      text: "This item will be removed from your curated bag.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Remove",
-      confirmButtonColor: "#f43f5e",
-      customClass: { popup: 'rounded-[30px]' }
-    });
-    if (result.isConfirmed) removeFromCart(productId);
-  };
+  if (!cartData || !cartData.items) return null;
 
-  if (!cartData.items || cartData.items.length === 0) {
+  // --- EMPTY CART VIEW ---
+  if (cartData.items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#FCFCF9] flex flex-col">
+      <div className="min-h-screen flex flex-col bg-white">
         <Navbar />
-        <div className="flex-grow flex flex-col items-center justify-center p-6">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-            <div className="w-40 h-40 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-8">
-              <ShoppingBag size={50} className="text-emerald-500" />
-            </div>
-            <h2 className="text-5xl font-serif italic mb-4 text-slate-900">Your Bag is Empty</h2>
-            <Link to="/customer-dashboard" className="inline-flex items-center gap-4 bg-slate-900 text-white px-10 py-5 rounded-full font-bold hover:bg-emerald-600 transition-all shadow-2xl mt-6">
-              Explore Collection <ArrowRight size={20} />
-            </Link>
-          </motion.div>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 mt-20">
+          <div className="mb-10 w-full max-w-md border rounded-[20px] p-6">
+            <p className="text-xs font-bold text-gray-400 uppercase mb-4 tracking-widest">Monthly Budget Status</p>
+            <BudgetTracker spent={cartData.spent || 0} limit={cartData.monthlyBudget} />
+          </div>
+          <h1 className="text-5xl font-black uppercase italic tracking-tighter">Your Bag Is Empty</h1>
+          <Link to="/customer-dashboard" className="bg-black text-white px-10 py-4 rounded-full mt-8 flex items-center gap-2 font-medium hover:scale-105 transition-transform">
+            Browse Products <ArrowRight size={20} />
+          </Link>
         </div>
         <Footer />
       </div>
@@ -75,187 +56,132 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FCFCF9] text-[#1A1A1A] font-sans selection:bg-emerald-100 overflow-x-hidden">
+    <div className="min-h-screen bg-white text-black">
       <Navbar />
-
-      <main className="max-w-7xl mx-auto px-6 md:px-12 pt-40 pb-20">
+      
+      <main className="max-w-7xl mx-auto px-4 pt-28 pb-20">
+        {/* Breadcrumb */}
         
-        {/* --- HEADER & BUDGET SECTION --- */}
-        <section className="mb-20 flex flex-col lg:flex-row lg:items-end justify-between gap-10">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex-1">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-emerald-500 rounded-lg shadow-lg shadow-emerald-200">
-                <Sparkles size={16} className="text-white" />
-              </div>
-              <span className="text-[11px] font-bold uppercase tracking-[0.4em] text-emerald-600">Your Curated Selection</span>
-            </div>
-            <h1 className="text-6xl md:text-8xl font-serif italic leading-none mb-4">
-              The <span className="text-emerald-500">Bag.</span>
-            </h1>
-            <p className="text-slate-500 text-lg font-serif italic border-l-2 border-emerald-200 pl-6">
-              "A selection of {cartData.items.length} pieces aligned with your style."
-            </p>
-          </motion.div>
 
-          {/* Budget Tracker at the top side */}
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }} 
-            animate={{ opacity: 1, x: 0 }}
-            className="w-full lg:w-96 bg-white border border-slate-100 p-8 rounded-[40px] shadow-xl shadow-slate-200/40 relative overflow-hidden"
-          >
-            <div className="flex justify-between items-center mb-6">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Budget Intelligence</span>
-              <button onClick={handleEditBudget} className="p-2 hover:bg-emerald-50 rounded-full text-emerald-500 transition-all">
-                <Edit3 size={14} />
-              </button>
-            </div>
-            
-            {cartData.monthlyBudget ? (
-              <BudgetTracker spent={cartData.spent || 0} limit={cartData.monthlyBudget} />
-            ) : (
-              <button onClick={handleEditBudget} className="w-full py-3 bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-widest rounded-2xl hover:bg-emerald-100 transition-all">
-                + Set Monthly Limit
-              </button>
-            )}
+        <h1 className="text-5xl font-black uppercase italic mb-10 tracking-tighter">Your Cart</h1>
 
-            {/* Subtle background decoration */}
-            <div className="absolute -right-4 -bottom-4 opacity-[0.03] pointer-events-none">
-              <CreditCard size={120} />
-            </div>
-          </motion.div>
-        </section>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
-          {/* --- ITEMS LIST --- */}
-          <div className="lg:col-span-8 space-y-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          
+          {/* LEFT: ITEM LIST */}
+          <div className="lg:col-span-7 border rounded-[20px] p-6 space-y-6">
             <AnimatePresence>
-              {cartData.items.map((item, idx) => (
+              {cartData.items.map((item, index) => (
                 <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
                   key={item.productId}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -50 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="group flex flex-col md:flex-row gap-10 items-center border-b border-slate-100 pb-12"
                 >
-                  <div className="w-full md:w-56 aspect-square bg-[#F8F8F5] rounded-[40px] overflow-hidden p-8 group-hover:shadow-2xl transition-all duration-700">
-                    <img 
-                      src={item.imageURL || item.image} 
-                      alt={item.name}
-                      className="w-full h-full object-contain mix-blend-multiply group-hover:scale-110 transition-transform duration-500" 
-                    />
-                  </div>
-
-                  <div className="flex-1 flex flex-col justify-between self-stretch py-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-2">Piece № {idx + 1}</p>
-                        <h3 className="text-2xl font-bold text-slate-800 group-hover:text-emerald-600 transition-colors uppercase tracking-tight">{item.name}</h3>
-                      </div>
-                      <button 
-                        onClick={() => handleRemoveItem(item.productId)}
-                        className="p-3 text-slate-300 hover:text-rose-500 transition-all bg-white rounded-full shadow-sm hover:shadow-md"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                  <div className="flex gap-4">
+                    <div className="w-28 h-28 bg-[#F0EEED] rounded-xl flex items-center justify-center overflow-hidden">
+                      <img src={item.imageURL || item.image} className="mix-blend-multiply object-contain w-20" alt={item.name} />
                     </div>
-
-                    <div className="flex items-end justify-between mt-8">
-                      <div className="flex items-center bg-slate-900 rounded-full p-1 shadow-2xl">
-                        <button
-                          className="w-10 h-10 flex items-center justify-center text-white hover:text-emerald-400 disabled:opacity-30"
-                          disabled={item.quantity <= 1}
-                          onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <span className="w-8 text-center font-bold text-white">{item.quantity}</span>
-                        <button
-                          className="w-10 h-10 flex items-center justify-center text-white hover:text-emerald-400"
-                          onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                        >
-                          <Plus size={16} />
+                    
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-bold text-xl">{item.name}</h3>
+                          <p className="text-sm text-gray-400">Size: <span className="text-gray-500">Large</span></p>
+                          <p className="text-sm text-gray-400">Color: <span className="text-gray-500">Default</span></p>
+                        </div>
+                        <button onClick={() => removeFromCart(item.productId)} className="text-red-500 hover:scale-110 transition-transform">
+                          <Trash2 size={22} fill="currentColor" />
                         </button>
                       </div>
 
-                      <div className="text-right">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Price</p>
-                        <p className="text-3xl font-serif italic text-slate-900">₹{(item.price * item.quantity).toLocaleString()}</p>
+                      <div className="flex justify-between items-center mt-4">
+                        <p className="text-2xl font-bold">₹{item.price.toLocaleString()}</p>
+                        <div className="flex items-center bg-[#F0F0F0] rounded-full px-4 py-2 gap-5">
+                          <button onClick={() => updateQuantity(item.productId, item.quantity - 1)} className="hover:text-gray-500"><Minus size={18} /></button>
+                          <span className="font-bold">{item.quantity}</span>
+                          <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} className="hover:text-gray-500"><Plus size={18} /></button>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  {index !== cartData.items.length - 1 && <hr className="mt-6 border-gray-100" />}
                 </motion.div>
               ))}
             </AnimatePresence>
           </div>
 
-          {/* --- SUMMARY PANEL --- */}
-          <aside className="lg:col-span-4">
-            <div className="bg-white rounded-[50px] p-10 shadow-2xl shadow-slate-200/50 sticky top-40 border border-slate-50">
-              <h2 className="text-2xl font-bold uppercase tracking-[0.2em] mb-10">Order Summary</h2>
+          {/* RIGHT: BUDGET & SUMMARY */}
+          <aside className="lg:col-span-5 space-y-6">
+            
+            {/* BUDGET TRACKER CARD */}
+            <div className="border rounded-[20px] p-6 bg-white shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Monthly Budget</p>
+                <button onClick={handleEditBudget} className="text-gray-400 hover:text-black transition-colors">
+                  <Edit3 size={18} />
+                </button>
+              </div>
+              <BudgetTracker 
+                spent={cartData.spent}
+                limit={cartData.monthlyBudget}
+                cartTotal={currentCartTotal}
+              />
+            </div>
+
+            {/* ORDER SUMMARY CARD */}
+            <div className="border rounded-[20px] p-6 bg-white shadow-sm">
+              <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
               
-              <div className="space-y-4 mb-10">
-                <div className="flex justify-between text-slate-400 text-sm font-bold uppercase tracking-widest">
+              <div className="space-y-4">
+                <div className="flex justify-between text-gray-500 text-lg">
                   <span>Subtotal</span>
-                  <span className="text-slate-900 font-sans">₹{(cartData.spent || 0).toLocaleString()}</span>
+                  <span className="text-black font-bold">₹{currentCartTotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-slate-400 text-sm font-bold uppercase tracking-widest">
-                  <span>Shipping</span>
-                  <span className="text-emerald-600">Complimentary</span>
+                <div className="flex justify-between text-lg">
+                  <span className="text-gray-500">Discount (-20%)</span>
+                  <span className="text-red-500 font-bold">-₹{discount.toLocaleString()}</span>
                 </div>
-                <div className="h-[1px] bg-slate-100 my-8" />
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold uppercase tracking-widest">Grand Total</span>
-                  <span className="text-4xl font-serif italic font-bold text-emerald-600">
-                    ₹{(cartData.spent || 0).toLocaleString()}
-                  </span>
+                <div className="flex justify-between text-gray-500 text-lg">
+                  <span>Delivery Fee</span>
+                  <span className="text-black font-bold">₹{deliveryFee}</span>
+                </div>
+                
+                <hr className="border-gray-100 my-4" />
+                
+                <div className="flex justify-between text-black text-xl font-bold">
+                  <span>Total</span>
+                  <span>₹{finalTotal.toLocaleString()}</span>
                 </div>
               </div>
 
-              <Link to="/checkout" state={{ total: cartData.spent }}>
-                <button className="group w-full bg-slate-900 text-white py-6 rounded-full font-bold text-lg hover:bg-emerald-600 transition-all flex items-center justify-center gap-3 shadow-2xl">
-                  Process Order
-                  <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+              {/* Promo Input */}
+              <div className="mt-6 flex gap-3">
+                <div className="flex-1 flex items-center bg-[#F0F0F0] rounded-full px-4 py-3 gap-2">
+                  <Tag className="text-gray-400" size={20} />
+                  <input type="text" placeholder="Add promo code" className="bg-transparent outline-none w-full text-sm" />
+                </div>
+                <button className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors">Apply</button>
+              </div>
+
+              <Link to="/checkout" state={{ total: finalTotal }} className="block mt-6">
+                <button className="w-full bg-black text-white py-4 rounded-full font-bold flex items-center justify-center gap-3 hover:gap-5 transition-all">
+                  Go to Checkout <ArrowRight size={20} />
                 </button>
               </Link>
 
-              {/* Secure Badges */}
-              <div className="mt-10 flex justify-center gap-10 border-t border-slate-50 pt-8">
-                <div className="flex flex-col items-center gap-2">
-                  <Truck size={18} className="text-slate-300" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Express</span>
+              {/* Over Budget Alert */}
+              {cartData.monthlyBudget && realTimeSpent > cartData.monthlyBudget && (
+                <div className="mt-6 p-4 bg-red-50 text-red-600 rounded-2xl flex gap-3 items-center text-sm border border-red-100">
+                  <AlertCircle size={20} />
+                  <span className="font-medium">Warning: This order exceeds your monthly budget!</span>
                 </div>
-                <div className="flex flex-col items-center gap-2">
-                  <ShieldCheck size={18} className="text-slate-300" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">Secure</span>
-                </div>
-              </div>
-
-              {/* Alert for Budget Overrun */}
-              {cartData.monthlyBudget && cartData.spent > cartData.monthlyBudget && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  className="mt-8 bg-rose-50 border border-rose-100 p-5 rounded-[25px] flex items-start gap-4"
-                >
-                  <AlertCircle className="text-rose-500 shrink-0" size={18} />
-                  <div>
-                    <p className="text-rose-600 font-bold text-xs uppercase tracking-wider">Budget Alert</p>
-                    <p className="text-rose-400 text-[10px] mt-1">You are ₹{(cartData.spent - cartData.monthlyBudget).toLocaleString()} over limit.</p>
-                  </div>
-                </motion.div>
               )}
             </div>
           </aside>
+
         </div>
       </main>
-
       <Footer />
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,400;1,700&display=swap');
-        .font-serif { font-family: 'Playfair Display', serif; }
-      `}} />
     </div>
   );
 };

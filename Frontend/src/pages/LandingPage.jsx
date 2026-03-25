@@ -1,47 +1,71 @@
+import Chatbot from "../Components/Chatbot";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Sparkles, Plus, Instagram, Twitter, Facebook } from "lucide-react";
-import { Button } from "../Components/ui/button";
+import { Plus, ArrowRight, ShoppingBag } from "lucide-react";
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
-import Chatbot from "../Components/Chatbot";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const SLIDES = [
-  { 
-    id: 1, 
-    title: "FUTURE STYLE", 
-    desc: "AI-Curated Fashion for the 2026 Season.",
-    img: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=2000", 
-  },
-  { 
-    id: 2, 
-    title: "PRECISION TECH", 
-    desc: "Experience software that predicts your needs.",
-    img: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=2000", 
-  },
-  { 
-    id: 3, 
-    title: "MODERN HOME", 
-    desc: "Essentials for the modern sanctuary.",
-    img: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000", 
-  }
+  { id: 1, title: "FUTURE STYLE", desc: "AI-Curated Fashion for the 2026 Season.", img: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=2000" },
+  { id: 2, title: "PRECISION TECH", desc: "Experience software that predicts your needs.", img: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=2000" },
+  { id: 3, title: "MODERN HOME", desc: "Essentials for the modern sanctuary.", img: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000" }
 ];
 
 export default function RetailXHome() {
   const [index, setIndex] = useState(0);
-  const navigate = useNavigate(); 
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  // // --- NEW: AUTH PROTECTION LOGIC ---
-  // useEffect(() => {
-  //   const user = localStorage.getItem('user');
-  //   // Agar user login hai, toh usse landing page mat dikhao, seedha dashboard bhejo
-  //   if (user) {
-  //     navigate('/dashboard');
-  //   }
-  // }, [navigate]);
+  // --- REPLACED THIS USEEFFECT FOR CATEGORY DIVERSITY ---
+useEffect(() => {
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get("http://127.0.0.1:5000/api/products/");
+      const allProducts = res.data;
 
-  // Auto-play timer
+      console.log("Data check:", allProducts[0]); // Console mein dekho 'id' aa raha hai ya '_id'
+
+      if (allProducts && allProducts.length > 0) {
+        const diverseSelection = [];
+        const pickedIds = new Set();
+        const foundCategories = new Set();
+
+        allProducts.forEach(product => {
+          // Backend kabhi 'id' bhejta hai kabhi '_id', hum dono check karenge
+          const productId = product._id || product.id; 
+          const cat = product.category ? product.category.toString().toLowerCase().trim() : "other";
+          
+          if (!foundCategories.has(cat) && diverseSelection.length < 8) {
+            diverseSelection.push(product);
+            foundCategories.add(cat);
+            pickedIds.add(productId);
+          }
+        });
+
+        if (diverseSelection.length < 8) {
+          allProducts.forEach(product => {
+            const productId = product._id || product.id;
+            if (diverseSelection.length < 8 && !pickedIds.has(productId)) {
+              diverseSelection.push(product);
+              pickedIds.add(productId);
+            }
+          });
+        }
+        setProducts(diverseSelection);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchProducts();
+}, []);
+  // Timer for Hero Slider (Keep this as is)
   useEffect(() => {
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % SLIDES.length);
@@ -53,168 +77,101 @@ export default function RetailXHome() {
     <div className="flex flex-col min-h-screen bg-white overflow-x-hidden">
       <Navbar />
 
-      {/* ---------- 1. FULLSCREEN HERO SLIDESHOW ---------- */}
+      {/* ---------- 1. HERO SECTION ---------- */}
       <section className="relative h-screen w-full flex items-center overflow-hidden bg-black">
         <AnimatePresence mode="wait">
-          <motion.div 
-            key={index}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5, ease: "easeInOut" }}
-            className="absolute inset-0 w-full h-full"
-          >
-            <motion.div 
-              initial={{ scale: 1.1 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 8, ease: "linear" }}
-              className="absolute inset-0 w-full h-full"
-            >
-              <img 
-                src={SLIDES[index].img} 
-                className="w-full h-full object-cover" 
-                alt="RetailX Hero" 
-              />
+          <motion.div key={index} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 1.5 }} className="absolute inset-0 w-full h-full">
+            <motion.div initial={{ scale: 1.1 }} animate={{ scale: 1 }} transition={{ duration: 8 }} className="absolute inset-0 w-full h-full">
+              <img src={SLIDES[index].img} className="w-full h-full object-cover" alt="Hero" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
             </motion.div>
-
-            <div className="relative z-10 h-full max-w-7xl mx-auto px-8 md:px-12 flex flex-col justify-center">
-              <motion.div
-                initial={{ y: 40, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="max-w-3xl"
-              >
-                <p className="text-emerald-400 font-black tracking-[0.5em] text-xs mb-6 uppercase">
-                  RetailX Intelligence
-                </p>
+            <div className="relative z-10 h-full max-w-7xl mx-auto px-8 flex flex-col justify-center">
+              <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}>
+                <p className="text-emerald-400 font-black tracking-[0.5em] text-xs mb-6 uppercase">RetailX Intelligence</p>
                 <h1 className="text-6xl md:text-9xl font-bold text-white tracking-tighter leading-[0.9] mb-8">
                   {SLIDES[index].title.split(" ")[0]} <br />
-                  <span className="text-transparent" style={{ WebkitTextStroke: "2px white" }}>
-                    {SLIDES[index].title.split(" ")[1]}
-                  </span>
+                  <span className="text-transparent" style={{ WebkitTextStroke: "2px white" }}>{SLIDES[index].title.split(" ")[1]}</span>
                 </h1>
-                <p className="text-slate-300 text-lg md:text-xl max-w-lg mb-10 leading-relaxed">
-                  {SLIDES[index].desc}
-                </p>
-                <div className="flex flex-wrap gap-4 mt-8">
-                  <Button 
-                    onClick={() => navigate("/auth")}
-                    className="rounded-full px-8 py-4 text-base bg-[#059669] hover:bg-[#10b981] text-white font-bold border-none transition-all active:scale-95 shadow-lg shadow-emerald-900/20"
-                  >
-                    Explore Drop
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="rounded-full px-8 py-4 text-base border-2 border-white/40 bg-transparent text-white backdrop-blur-sm hover:bg-white hover:text-black transition-all"
-                  >
-                    View Lookbook
-                  </Button>
-                </div>
               </motion.div>
             </div>
           </motion.div>
         </AnimatePresence>
-
-        {/* Slide Indicators */}
-        <div className="absolute right-8 md:right-12 bottom-12 flex items-center gap-6 z-30">
-          <span className="text-white/40 font-mono text-sm">0{index + 1}</span>
-          <div className="flex gap-3">
-            {SLIDES.map((_, i) => (
-              <button 
-                key={i} 
-                onClick={() => setIndex(i)}
-                className={`h-1 transition-all duration-700 rounded-full ${i === index ? "bg-emerald-500 w-16" : "bg-white/20 w-4"}`}
-              />
-            ))}
-          </div>
-          <span className="text-white/40 font-mono text-sm">0{SLIDES.length}</span>
-        </div>
       </section>
 
-      {/* ---------- 2. LOGO TICKER ---------- */}
-      <div className="py-12 bg-white overflow-hidden whitespace-nowrap border-b border-slate-150">
-        <motion.div 
-          initial={{ x: 0 }}
-          animate={{ x: "-50%" }}
-          transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-          className="flex gap-20 items-center text-[80px] md:text-[140px] font-black text-slate-200 uppercase leading-none select-none"
-        >
-          <span>RetailX Intelligence</span>
-          <span className="text-emerald-500/10">RetailX Intelligence</span>
-          <span>RetailX Intelligence</span>
-          <span className="text-emerald-500/10">RetailX Intelligence</span>
-        </motion.div>
-      </div>
-
-      {/* ---------- 3. PRODUCT GRID ---------- */}
-      <section className="py-24 bg-white px-6">
+      {/* ---------- 2. PRODUCT GRID ---------- */}
+      <section id="product-grid" className="py-24 bg-white px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row items-end justify-between mb-20">
-            <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-slate-900 leading-none">
-              WEEKLY <br /> <span className="text-emerald-600">NEW DROPS</span>
+          <div className="flex flex-col md:flex-row items-end justify-between mb-20 border-b border-gray-100 pb-10">
+            <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-slate-900 leading-none uppercase">
+              Curated <br /> <span className="text-emerald-600">Categories</span>
             </h2>
-            <p className="text-slate-400 mt-4 md:mt-0 text-sm font-medium uppercase tracking-widest">
-              Available for a limited time
-            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-20">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <motion.div 
-                key={i} 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="group cursor-pointer"
-                onClick={() => navigate("/auth")}
-              >
-                <div className="relative overflow-hidden bg-slate-50 aspect-[3/4] rounded-[32px]">
-                  <img 
-                    src={`/Products/product${i}.jpeg`} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
-                    alt="Product"
-                  />
-                  <button className="absolute bottom-6 right-6 bg-white text-black p-4 rounded-full shadow-2xl opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
-                    <Plus size={24} />
-                  </button>
-                </div>
-                <div className="mt-6">
-                  <h3 className="text-xl font-bold text-slate-900">RetailX Curated {i}</h3>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-slate-400 text-sm font-bold uppercase tracking-widest">Limited Edition</span>
-                    <span className="text-lg font-black">₹{(i * 999).toLocaleString()}</span>
+            {loading ? (
+              <div className="col-span-full flex flex-col items-center py-20 gap-4">
+                 <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                 <p className="font-mono text-slate-400 text-xs tracking-[0.3em] uppercase">Sorting by Category...</p>
+              </div>
+            ) : products.length > 0 ? (
+              products.map((product) => (
+                <motion.div 
+                  key={product._id || product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="group cursor-pointer"
+                  onClick={() => navigate(`/product/${product._id}`)}
+                >
+                  <div className="relative overflow-hidden bg-[#F7F7F7] aspect-[3/4] rounded-sm flex items-center justify-center p-8">
+                    <img 
+                      src={product.imageURL || product.image || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1000"} 
+                      className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-1000" 
+                      alt={product.name}
+                    />
+                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <button className="absolute bottom-6 right-6 bg-white text-black p-4 rounded-full shadow-2xl opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all">
+                      <Plus size={20} />
+                    </button>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+
+                  <div className="mt-6 space-y-1">
+                    {/* ADDED CATEGORY LABEL HERE */}
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                      {product.category}
+                    </p>
+                    <h3 className="text-sm font-medium text-black truncate uppercase tracking-tight">
+                      {product.name}
+                    </h3>
+                    <p className="text-sm font-light text-gray-900">
+                      ₹{(product.finalPrice || product.price)?.toLocaleString()}
+                    </p>
+                  </div>
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-full py-20 text-center">
+                <ShoppingBag className="mx-auto text-gray-200" size={48} />
+                <p className="text-gray-400 mt-4 uppercase tracking-widest">Vault is currently empty.</p>
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* ---------- 4. NEWSLETTER CTA ---------- */}
-      <section className="py-32 px-6">
-        <div className="max-w-7xl mx-auto rounded-[60px] relative overflow-hidden bg-slate-950 p-12 md:p-24 text-center">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500/20 via-transparent to-transparent" />
-          <div className="relative z-10">
-            <h2 className="text-5xl md:text-7xl font-bold text-white tracking-tighter mb-8">
-              NEVER MISS <br /> A DROP
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <input 
-                placeholder="Enter your email" 
-                className="bg-white/5 border border-white/10 px-8 py-5 rounded-full text-white w-full sm:w-96 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-              />
-              <Button onClick={() => navigate("/auth")} className="bg-[#37cd9e] text-white rounded-full px-8 py-4 font-bold hover:bg-[#059669] w-full sm:w-auto transition-all duration-300 active:scale-95 shadow-xl shadow-slate-900/10 border-none">
-                Join RetailX
-              </Button>
-            </div>
-          </div>
-          <Chatbot />
+      <section className="py-32 bg-zinc-50 flex justify-center items-center px-6">
+        <div className="text-center max-w-xl">
+          <h2 className="text-3xl font-light tracking-[0.2em] text-zinc-900 mb-8 uppercase">Join RetailX</h2>
+          <button 
+            onClick={() => navigate("/auth")}
+            className="group flex items-center gap-4 mx-auto px-10 py-4 bg-black text-white text-[10px] font-bold uppercase tracking-[0.4em] hover:bg-emerald-800 transition-all duration-500 shadow-xl"
+          >
+            Create Account <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
+          </button>
         </div>
       </section>
 
+      <Chatbot />
       <Footer />
     </div>
   );

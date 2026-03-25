@@ -1,75 +1,99 @@
 import React from 'react';
-import { Wallet, AlertCircle, CheckCircle2, PiggyBank } from 'lucide-react';
+import { Wallet, AlertCircle } from 'lucide-react';
 
-const BudgetTracker = ({ spent = 0, limit = 0 }) => {
-  // ✅ Calculation for progress bar
-  // Agar limit 0 hai toh 2000 default maan ke chalenge jab tak data load na ho
+const BudgetTracker = ({ spent = 0, limit = 0, cartTotal = 0 }) => {
+  // 1. Default limit agar 0 hai toh
   const displayLimit = limit > 0 ? limit : 2000; 
-  const percentage = Math.min((spent / displayLimit) * 100, 100);
-  const isOverBudget = spent > displayLimit;
-  const remaining = displayLimit - spent;
+  const totalImpact = spent + cartTotal;
   
-  // ✅ Check agar limit sach mein 0 hai (pehli baar ke liye)
-  const isBudgetSet = limit > 0;
+  // 2. Logic: Blue bar hamesha 'spent' dikhayega
+  const spentWidth = (spent / displayLimit) * 100;
+  
+  // 3. Logic: Cart bar kitna lamba hoga
+  // Agar spent + cart budget ke bahar hai, toh ye bar ko end tak stretch karega
+  const cartWidth = (cartTotal / displayLimit) * 100;
+  
+  const isOverBudget = totalImpact > displayLimit;
+  const remaining = displayLimit - totalImpact;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-2 w-full md:w-80">
-      {/* Header Section */}
-      <div className={`p-3 flex items-center justify-between ${!isBudgetSet ? 'bg-slate-50' : isOverBudget ? 'bg-red-50' : 'bg-emerald-50'}`}>
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-2 w-full">
+      {/* Header */}
+      <div className={`p-3 flex items-center justify-between ${isOverBudget ? 'bg-red-50' : 'bg-blue-50'}`}>
         <div className="flex items-center gap-2">
-          <Wallet className={!isBudgetSet ? 'text-slate-400' : isOverBudget ? 'text-red-600' : 'text-emerald-600'} size={18} />
-          <h3 className="font-bold text-slate-800 text-xs md:text-sm tracking-tight">Monthly Budget</h3>
+          <Wallet className={isOverBudget ? 'text-red-600' : 'text-blue-600'} size={18} />
+          <h3 className="font-bold text-slate-800 text-xs tracking-tight">Budget Tracker</h3>
         </div>
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-          !isBudgetSet ? 'bg-slate-200 text-slate-500' : 
-          isOverBudget ? 'bg-red-200 text-red-700' : 'bg-emerald-200 text-emerald-700'
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+          isOverBudget ? 'bg-red-200 text-red-700' : 'bg-blue-200 text-blue-700'
         }`}>
-          {!isBudgetSet ? 'Syncing...' : isOverBudget ? 'Exceeded' : 'On Track'}
+          {isOverBudget ? 'Limit Exceeded' : 'On Track'}
         </span>
       </div>
 
-      {/* Content Section */}
       <div className="p-4">
-        <div className="flex justify-between items-end mb-2">
-          <div>
-            <p className="text-slate-400 text-[10px] uppercase tracking-wider font-bold leading-none mb-1">Spent</p>
-            <p className="text-xl font-black text-slate-900 leading-none">₹{spent.toLocaleString()}</p>
+        {/* Labels */}
+        <div className="flex justify-between items-end mb-3">
+          <div className="flex gap-4">
+            <div>
+              <p className="text-blue-500 text-[9px] uppercase font-black mb-1">Paid</p>
+              <p className="text-sm font-bold text-slate-700 leading-none">₹{spent.toLocaleString()}</p>
+            </div>
+            {cartTotal > 0 && (
+              <div className="border-l border-slate-200 pl-4">
+                <p className={`${isOverBudget ? 'text-red-500' : 'text-emerald-500'} text-[9px] uppercase font-black mb-1`}>Cart</p>
+                <p className={`text-sm font-bold leading-none ${isOverBudget ? 'text-red-600' : 'text-emerald-600'}`}>
+                  +₹{cartTotal.toLocaleString()}
+                </p>
+              </div>
+            )}
           </div>
           <div className="text-right">
-            <p className="text-slate-400 text-[10px] uppercase tracking-wider font-bold leading-none mb-1">Limit</p>
-            <p className="text-sm font-bold text-slate-600 leading-none">₹{displayLimit.toLocaleString()}</p>
+            <p className="text-slate-400 text-[9px] uppercase font-black mb-1">Limit</p>
+            <p className="text-sm font-bold text-slate-900 leading-none">₹{displayLimit.toLocaleString()}</p>
           </div>
         </div>
 
-        {/* Custom Progress Bar */}
-        <div className="relative w-full h-2.5 bg-slate-100 rounded-full overflow-hidden mb-3">
+        {/* --- DUAL COLOR BAR --- */}
+        <div className="flex w-full h-4 bg-slate-100 rounded-full overflow-hidden mb-4 shadow-inner">
+          {/* 1. Blue Bar (Spent) */}
           <div 
-            className={`h-full transition-all duration-700 ease-out rounded-full ${
-              !isBudgetSet ? 'bg-slate-300' : 
-              isOverBudget ? 'bg-red-500' : 'bg-emerald-500'
+            className="h-full bg-blue-600 transition-all duration-500 ease-out border-r border-white/20 shrink-0"
+            style={{ width: `${Math.min(spentWidth, 100)}%` }}
+          />
+          
+          {/* 2. Color Bar (Cart) - Iska width tabhi dikhega jab cart mein kuch ho */}
+          <div 
+            className={`h-full transition-all duration-700 ease-in-out shrink-0 ${
+              isOverBudget ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'
             }`}
-            style={{ width: `${percentage}%` }}
+            style={{ width: `${Math.min(cartWidth, 100 - spentWidth)}%` }}
           />
         </div>
 
-        {/* Footer Info */}
-        <div className="flex items-center gap-2 min-h-[20px]">
-          {!isBudgetSet ? (
-            <div className="flex items-center gap-1.5 text-slate-400">
-              <PiggyBank size={14} />
-              <p className="text-[11px] font-medium">Budget load ho raha hai...</p>
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+          <div className="flex gap-3">
+            <div className="flex items-center gap-1">
+              <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase">Paid</span>
             </div>
-          ) : isOverBudget ? (
-            <div className="flex items-center gap-1.5 text-red-600">
-              <AlertCircle size={14} />
-              <p className="text-[11px] font-medium italic">₹{Math.abs(remaining).toLocaleString()} Your spending has gone beyond the set limit.</p>
+            <div className="flex items-center gap-1">
+              <span className={`w-2 h-2 rounded-full ${isOverBudget ? 'bg-red-500' : 'bg-emerald-500'}`}></span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase">In Cart</span>
             </div>
-          ) : (
-            <div className="flex items-center gap-1.5 text-emerald-600">
-              <CheckCircle2 size={14} />
-              <p className="text-[11px] font-medium italic">₹{remaining.toLocaleString()} remaining in your budget.</p>
-            </div>
-          )}
+          </div>
+
+          <div className="flex items-center gap-1">
+            {isOverBudget ? (
+              <div className="flex items-center gap-1 text-red-600">
+                <AlertCircle size={12} />
+                <p className="text-[10px] font-black uppercase italic">Over ₹{Math.abs(remaining).toLocaleString()}</p>
+              </div>
+            ) : (
+              <p className="text-[10px] font-black text-emerald-600 uppercase italic">₹{remaining.toLocaleString()} Safe</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
