@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from extensions import bcrypt, mongo
 from models.admin_model import Admin
+from models.complaint import Complaint # <--- Naya Import
 from bson import ObjectId
 import os
 
@@ -83,6 +84,36 @@ def get_all_orders():
     for o in orders: o["_id"] = str(o["_id"])
     return jsonify(orders), 200
 
+# --- NEW: SUPPORT & COMPLAINTS ROUTES ---
+
+@admin_bp.route("/complaints", methods=["GET"])
+@jwt_required()
+def get_admin_complaints():
+    try:
+        # Model ka static method use karke saari complaints mangwayi
+        complaints = Complaint.get_all()
+        return jsonify(complaints), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
+@admin_bp.route("/complaints/status", methods=["PATCH"])
+@jwt_required()
+def update_complaint_status():
+    try:
+        data = request.json
+        complaint_id = data.get("id")
+        new_status = data.get("status") # E.g., "Resolved" ya "In-Progress"
+
+        if not complaint_id or not new_status:
+            return jsonify({"message": "Complaint ID and Status are required"}), 400
+
+        result = Complaint.update_status(complaint_id, new_status)
+        if result.modified_count > 0:
+            return jsonify({"message": f"Complaint status updated to {new_status}"}), 200
+        return jsonify({"message": "Complaint not found or no changes made"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
 # --- STATS ROUTE ---
 @admin_bp.route("/stats", methods=["GET"])
 @jwt_required()
@@ -92,6 +123,7 @@ def get_admin_stats():
         total_sellers = mongo.db.sellers.count_documents({})
         total_products = mongo.db.products.count_documents({})
         total_orders = mongo.db.orders.count_documents({})
+        total_complaints = mongo.db.complaints.count_documents({"status": "Pending"}) # Naya Stat
         
         pipeline = [{"$group": {"_id": None, "totalRevenue": {"$sum": "$total"}}}]
         revenue_result = list(mongo.db.orders.aggregate(pipeline))
@@ -102,6 +134,7 @@ def get_admin_stats():
             "sellers": total_sellers,
             "products": total_products,
             "orders": total_orders,
+            "pending_complaints": total_complaints, # Dashboard pe dikhane ke liye
             "revenue": round(total_revenue, 2)
         }), 200
     except Exception as e:

@@ -38,7 +38,7 @@ def get_public_deals():
             # Sirf active products uthao aur top 4 rakho
             raw_list = [p for p in d.get('raw_products', []) if p.get('isActive')]
             
-            for p in raw_list[:4]:
+            for p in raw_list[:6]:
                 mrp = float(p.get('price', 0))
                 
                 # 🔥 YAHAN CALCULATION FORCE KARO

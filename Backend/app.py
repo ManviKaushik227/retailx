@@ -28,6 +28,8 @@ from routes.admin_ops import admin_ops_bp
 from routes.public_deals_routes import public_deals_bp
 from routes.public_ops import public_ops_bp
 
+from routes.complaint_routes import complaint_bp
+
 
 load_dotenv()
 
@@ -76,6 +78,9 @@ app.register_blueprint(wishlist_bp, url_prefix='/api/wishlist')
 app.register_blueprint(public_deals_bp, url_prefix='/api/deals') # Your current focus 🎯
 app.register_blueprint(admin_ops_bp, url_prefix='/api/admin_ops')
 app.register_blueprint(public_ops_bp, url_prefix='/api/public')
+app.register_blueprint(complaint_bp)
+
+
 
 
 @app.route("/")

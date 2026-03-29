@@ -19,6 +19,7 @@ import UserDashboard from "./pages/UserDashboard";
 import CategoryPage from "./pages/CategoryPage";
 import Wishlist from "./pages/Wishlist";
 import Deals from "./pages/Deals";
+import HelpCenter from "./pages/HelpCenter";
 
 function App() {
   return (
@@ -55,6 +56,8 @@ function App() {
           <Route path="/wishlist" element={<Wishlist />} />
 
           <Route path="/deals" element={<Deals />} />
+
+          <Route path="/help-center" element={<HelpCenter />} />
 
 
 

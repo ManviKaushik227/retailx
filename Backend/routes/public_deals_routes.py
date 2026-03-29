@@ -30,7 +30,7 @@ def get_public_deals():
             products_cursor = mongo.db.products.find({
                 "category": {"$regex": f"^{category_name}$", "$options": "i"},
                 "isActive": True
-            }).limit(4)
+            }).limit(6)
             
             formatted_products = []
             for p in products_cursor:
