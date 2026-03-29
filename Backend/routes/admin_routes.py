@@ -1,73 +1,108 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token
-from extensions import bcrypt
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from extensions import bcrypt, mongo
 from models.admin_model import Admin
+from bson import ObjectId
 import os
-import re
-from dotenv import load_dotenv
-load_dotenv()
 
+admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
-admin_bp = Blueprint("admin", __name__)
-
-# 🔐 Strong password rule
-def is_strong_password(password):
-    if len(password) < 8:
-        return False
-    if not re.search(r"[A-Z]", password):
-        return False
-    if not re.search(r"[a-z]", password):
-        return False
-    if not re.search(r"[0-9]", password):
-        return False
-    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
-        return False
-    return True
-
-
-# 📝 ADMIN REGISTER
+# --- AUTH ROUTES ---
 @admin_bp.route("/register", methods=["POST"])
 def register_admin():
     data = request.json
-    email = data.get("email")
-    password = data.get("password")
-    admin_key = data.get("adminKey")
+    if not data.get("email") or not data.get("password"):
+        return jsonify({"message": "Email and password required"}), 400
 
-    if not all([email, password, admin_key]):
-        return jsonify({"message": "All fields required"}), 400
-
-    # 🔐 Check admin secret
-    if admin_key != os.getenv("ADMIN_SECRET_KEY"):
-        return jsonify({"message": "Invalid Admin Secret Key"}), 403
-
-    if not is_strong_password(password):
-        return jsonify({
-            "message": "Password must be 8+ chars with upper, lower, number & special"
-        }), 400
-
-    if Admin.find_by_email(email):
+    existing = Admin.find_by_email(data.get("email"))
+    if existing:
         return jsonify({"message": "Admin already exists"}), 400
 
-    hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
-    Admin.create_admin(email, hashed_pw)
+    hashed = bcrypt.generate_password_hash(data.get("password")).decode("utf-8")
+    admin = {"email": data.get("email"), "password": hashed}
+    mongo.db.admins.insert_one(admin)
+    return jsonify({"message": "Admin registered successfully"}), 201
 
-    token = create_access_token(identity={"email": email, "role": "admin"})
-    return jsonify({"token": token, "message": "Admin registered"}), 201
-
-
-# 🔓 ADMIN LOGIN
 @admin_bp.route("/login", methods=["POST"])
 def login_admin():
     data = request.json
-    email = data.get("email")
-    password = data.get("password")
-
-    admin = Admin.find_by_email(email)
-    if not admin:
+    admin = Admin.find_by_email(data.get("email"))
+    if not admin or not bcrypt.check_password_hash(admin["password"], data.get("password")):
         return jsonify({"message": "Invalid credentials"}), 401
-
-    if not bcrypt.check_password_hash(admin["password"], password):
-        return jsonify({"message": "Invalid credentials"}), 401
-
-    token = create_access_token(identity={"email": email, "role": "admin"})
+    
+    token = create_access_token(identity=data.get("email"), additional_claims={"role": "admin"})
     return jsonify({"token": token, "message": "Admin login success"}), 200
+
+# --- DATA MANAGEMENT ROUTES ---
+
+@admin_bp.route("/users", methods=["GET"])
+@jwt_required()
+def get_all_users():
+    users = list(mongo.db.users.find({}, {"password": 0}))
+    for u in users: u["_id"] = str(u["_id"])
+    return jsonify(users), 200
+
+@admin_bp.route("/users/<id>", methods=["DELETE"])
+@jwt_required()
+def delete_user(id):
+    try:
+        if not ObjectId.is_valid(id):
+            return jsonify({"message": "Invalid User ID format"}), 400
+        result = mongo.db.users.delete_one({"_id": ObjectId(id)})
+        if result.deleted_count > 0:
+            return jsonify({"message": "User deleted"}), 200
+        return jsonify({"message": "User not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@admin_bp.route("/sellers", methods=["GET"])
+@jwt_required()
+def get_all_sellers():
+    try:
+        sellers = list(mongo.db.sellers.find({}, {"password": 0}))
+        for s in sellers: s["_id"] = str(s["_id"])
+        return jsonify(sellers), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
+@admin_bp.route("/sellers/<id>", methods=["DELETE"])
+@jwt_required()
+def delete_seller(id):
+    try:
+        result = mongo.db.sellers.delete_one({"_id": ObjectId(id)})
+        if result.deleted_count > 0:
+            return jsonify({"message": "Seller removed"}), 200
+        return jsonify({"message": "Seller not found"}), 404
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500
+
+@admin_bp.route("/orders", methods=["GET"])
+@jwt_required()
+def get_all_orders():
+    orders = list(mongo.db.orders.find().sort("created_at", -1))
+    for o in orders: o["_id"] = str(o["_id"])
+    return jsonify(orders), 200
+
+# --- STATS ROUTE ---
+@admin_bp.route("/stats", methods=["GET"])
+@jwt_required()
+def get_admin_stats():
+    try:
+        total_users = mongo.db.users.count_documents({})
+        total_sellers = mongo.db.sellers.count_documents({})
+        total_products = mongo.db.products.count_documents({})
+        total_orders = mongo.db.orders.count_documents({})
+        
+        pipeline = [{"$group": {"_id": None, "totalRevenue": {"$sum": "$total"}}}]
+        revenue_result = list(mongo.db.orders.aggregate(pipeline))
+        total_revenue = revenue_result[0]['totalRevenue'] if revenue_result else 0
+
+        return jsonify({
+            "users": total_users,
+            "sellers": total_sellers,
+            "products": total_products,
+            "orders": total_orders,
+            "revenue": round(total_revenue, 2)
+        }), 200
+    except Exception as e:
+        return jsonify({"message": str(e)}), 500

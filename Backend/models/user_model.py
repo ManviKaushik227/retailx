@@ -15,7 +15,8 @@ class User:
             "password": password,
             "contact": {},
             "addresses": [],
-            "preferences": []
+            "preferences": [],
+            "wishlist":[]
         })
 
     @staticmethod

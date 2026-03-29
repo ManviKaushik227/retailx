@@ -17,6 +17,8 @@ import Checkout from "./pages/Checkout";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import UserDashboard from "./pages/UserDashboard";
 import CategoryPage from "./pages/CategoryPage";
+import Wishlist from "./pages/Wishlist";
+import Deals from "./pages/Deals";
 
 function App() {
   return (
@@ -50,6 +52,10 @@ function App() {
           <Route path="/dashboard" element={<UserDashboard />} />
 
           <Route path="/category/:categoryName" element={<CategoryPage />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+
+          <Route path="/deals" element={<Deals />} />
+
 
 
         </Routes>

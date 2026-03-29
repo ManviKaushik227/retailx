@@ -13,9 +13,20 @@ export const CartProvider = ({ children }) => {
     remaining: null
   });
 
+  // FIX: Safely get User ID without crashing
   const getUserId = () => {
-    const user = JSON.parse(localStorage.getItem("user"));
-    return user?.id || user?._id || null;
+    try {
+      const savedUser = localStorage.getItem("user");
+      // Check if data exists and is not the string "undefined" or "null"
+      if (!savedUser || savedUser === "undefined" || savedUser === "null") {
+        return null;
+      }
+      const user = JSON.parse(savedUser);
+      return user?.id || user?._id || null;
+    } catch (error) {
+      console.error("CartContext: Error parsing user from localStorage", error);
+      return null;
+    }
   };
 
   /* =======================
@@ -23,7 +34,12 @@ export const CartProvider = ({ children }) => {
      ======================= */
   const fetchCart = useCallback(async () => {
     const userId = getUserId();
-    if (!userId) return;
+    // Agar userId nahi hai toh request mat bhejo
+    if (!userId) {
+      setCartData({ items: [], spent: 0, monthlyBudget: null, percentUsed: 0, remaining: null });
+      return;
+    }
+    
     try {
       const res = await axios.get(`http://localhost:5000/api/cart?userId=${userId}`);
       setCartData(res.data);
@@ -63,12 +79,11 @@ export const CartProvider = ({ children }) => {
   };
 
   /* =======================
-      ADD TO CART (Fixed logic for Search & Data Mapping)
+      ADD TO CART
      ======================= */
   const addToCart = async (product) => {
     const userId = getUserId();
 
-    // Mapping: Search results usually use 'productId', DB uses '_id' or 'id'
     const finalProductId = product._id || product.id || product.productId;
 
     if (!userId) {
@@ -84,7 +99,7 @@ export const CartProvider = ({ children }) => {
     try {
       const res = await axios.post('http://localhost:5000/api/cart/add', {
         userId,
-        productId: finalProductId, // Sending the mapped ID
+        productId: finalProductId,
         name: product.name,
         price: parseFloat(product.price || product.finalPrice || 0),
         imageURL: product.imageURL || product.image || 'https://placehold.co/200',

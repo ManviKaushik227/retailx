@@ -21,6 +21,13 @@ from routes.cart_routes import cart_bp  # <--- UPDATED: Cart import kiya
 from routes.payment_routes import payment_bp
 from routes.user_routes import user_bp
 from routes.order import orders_bp
+from routes.wishlist_routes import wishlist_bp
+
+
+from routes.admin_ops import admin_ops_bp
+from routes.public_deals_routes import public_deals_bp
+from routes.public_ops import public_ops_bp
+
 
 load_dotenv()
 
@@ -38,6 +45,9 @@ app.config["JWT_TOKEN_LOCATION"] = ["headers"]
 app.config["JWT_HEADER_NAME"] = "Authorization"
 app.config["JWT_HEADER_TYPE"] = "Bearer"
 
+app.config["JWT_ERROR_MESSAGE_KEY"] = "message"
+app.config["JWT_OPTIONS_IN_REQUEST"] = False
+
 # INIT EXTENSIONS
 mongo.init_app(app)
 bcrypt.init_app(app)
@@ -50,7 +60,7 @@ app.register_blueprint(seller_bp, url_prefix="/api/seller")
 app.register_blueprint(preferences_bp, url_prefix="/api")
 
 app.register_blueprint(product_bp, url_prefix="/api/products")
-app.register_blueprint(search_bp, url_prefix="/api/search")
+app.register_blueprint(search_bp, url_prefix="/api")
 app.register_blueprint(chat_bp, url_prefix="/api/chat")
 app.register_blueprint(recommendation_bp, url_prefix="/api/recommendations")
 
@@ -60,6 +70,13 @@ app.register_blueprint(orders_bp)
 
 # UPDATED: Cart Blueprint register kiya (Iska prefix /api/cart already route file mein set hai)
 app.register_blueprint(cart_bp) 
+app.register_blueprint(wishlist_bp, url_prefix='/api/wishlist')
+
+
+app.register_blueprint(public_deals_bp, url_prefix='/api/deals') # Your current focus 🎯
+app.register_blueprint(admin_ops_bp, url_prefix='/api/admin_ops')
+app.register_blueprint(public_ops_bp, url_prefix='/api/public')
+
 
 @app.route("/")
 def home():
