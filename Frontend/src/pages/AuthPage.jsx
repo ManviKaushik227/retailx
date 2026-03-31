@@ -74,7 +74,7 @@ export default function AuthPage() {
 
       // 3. Save preferences (if any)
       const userPrefs = data.user?.preferences || [];
-      localStorage.setItem("user_preferences", JSON.stringify(userPrefs));
+      localStorage.setItem("user_prefs", JSON.stringify(userPrefs));
 
       // 4. Navigation
       if (mode === "register") {

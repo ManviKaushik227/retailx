@@ -52,7 +52,7 @@ const SellerDashboard = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       // Inventory Fetch (FIXED URL)
-      const pRes = await fetch(`${API_BASE}/api/products/seller`, { 
+      const pRes = await fetch(`${API_BASE}/api/seller/inventory`, { 
   headers: { 'Authorization': `Bearer ${token}` }
 });
 
@@ -87,8 +87,8 @@ const handleSubmitProduct = async (e) => {
   };
 
   const url = editingProduct 
-  ? `${API_BASE}/api/products/update/${editingProduct.id}`  // updated backend route
-  : `${API_BASE}/api/products/add`;  
+  ? `${API_BASE}/api/seller/product/update/${editingProduct._id}`  // updated backend route
+  : `${API_BASE}/api/seller/product/add`;  
   
   try {
     const res = await fetch(url, {
@@ -127,10 +127,10 @@ const handleSubmitProduct = async (e) => {
       confirmButtonText: 'Delete'
     });
 
-    if(result.isConfirmed){
+    if(result.isConfirmed){             
       const token = localStorage.getItem("sellerToken");
       try {
-        const res = await fetch(`${API_BASE}/api/products/delete/${id}`, {
+        const res = await fetch(` ${API_BASE}/api/seller/product/delete/${id}`, {
   method: 'DELETE',
   headers: { 'Authorization': `Bearer ${token}` }
 });
