@@ -1,33 +1,34 @@
 import React from 'react';
-import { Wallet, AlertCircle } from 'lucide-react';
+import { Wallet, AlertCircle, HelpCircle } from 'lucide-react'; // Ek icon extra add kiya hai
 
 const BudgetTracker = ({ spent = 0, limit = 0, cartTotal = 0 }) => {
-  // 1. Default limit agar 0 hai toh
-  const displayLimit = limit > 0 ? limit : 2000; 
+  // 1. Agar limit set nahi hai (0 ya null), toh flag true hoga
+  const isLimitNotSet = !limit || limit <= 0;
+  const displayLimit = limit > 0 ? limit : 0; 
+  
   const totalImpact = spent + cartTotal;
   
-  // 2. Logic: Blue bar hamesha 'spent' dikhayega
-  const spentWidth = (spent / displayLimit) * 100;
+  // 2. Progress calculations
+  const spentWidth = isLimitNotSet ? 0 : (spent / displayLimit) * 100;
+  const cartWidth = isLimitNotSet ? 0 : (cartTotal / displayLimit) * 100;
   
-  // 3. Logic: Cart bar kitna lamba hoga
-  // Agar spent + cart budget ke bahar hai, toh ye bar ko end tak stretch karega
-  const cartWidth = (cartTotal / displayLimit) * 100;
-  
-  const isOverBudget = totalImpact > displayLimit;
+  const isOverBudget = !isLimitNotSet && totalImpact > displayLimit;
   const remaining = displayLimit - totalImpact;
 
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-2 w-full">
-      {/* Header */}
-      <div className={`p-3 flex items-center justify-between ${isOverBudget ? 'bg-red-50' : 'bg-blue-50'}`}>
+      {/* Header - Agar limit set nahi hai toh Grayish rakhte hain */}
+      <div className={`p-3 flex items-center justify-between ${
+        isLimitNotSet ? 'bg-slate-50' : (isOverBudget ? 'bg-red-50' : 'bg-blue-50')
+      }`}>
         <div className="flex items-center gap-2">
-          <Wallet className={isOverBudget ? 'text-red-600' : 'text-blue-600'} size={18} />
+          <Wallet className={isLimitNotSet ? 'text-slate-400' : (isOverBudget ? 'text-red-600' : 'text-blue-600')} size={18} />
           <h3 className="font-bold text-slate-800 text-xs tracking-tight">Budget Tracker</h3>
         </div>
         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
-          isOverBudget ? 'bg-red-200 text-red-700' : 'bg-blue-200 text-blue-700'
+          isLimitNotSet ? 'bg-slate-200 text-slate-600' : (isOverBudget ? 'bg-red-200 text-red-700' : 'bg-blue-200 text-blue-700')
         }`}>
-          {isOverBudget ? 'Limit Exceeded' : 'On Track'}
+          {isLimitNotSet ? 'Budget Not Set' : (isOverBudget ? 'Limit Exceeded' : 'On Track')}
         </span>
       </div>
 
@@ -50,25 +51,34 @@ const BudgetTracker = ({ spent = 0, limit = 0, cartTotal = 0 }) => {
           </div>
           <div className="text-right">
             <p className="text-slate-400 text-[9px] uppercase font-black mb-1">Limit</p>
-            <p className="text-sm font-bold text-slate-900 leading-none">₹{displayLimit.toLocaleString()}</p>
+            {/* YAHAN CHANGE KIYA HAI: Agar limit 0 hai toh 'Not Set' dikhega */}
+            <p className={`text-sm font-bold leading-none ${isLimitNotSet ? 'text-slate-400 italic' : 'text-slate-900'}`}>
+              {isLimitNotSet ? 'Not Set' : `₹${displayLimit.toLocaleString()}`}
+            </p>
           </div>
         </div>
 
         {/* --- DUAL COLOR BAR --- */}
         <div className="flex w-full h-4 bg-slate-100 rounded-full overflow-hidden mb-4 shadow-inner">
-          {/* 1. Blue Bar (Spent) */}
-          <div 
-            className="h-full bg-blue-600 transition-all duration-500 ease-out border-r border-white/20 shrink-0"
-            style={{ width: `${Math.min(spentWidth, 100)}%` }}
-          />
-          
-          {/* 2. Color Bar (Cart) - Iska width tabhi dikhega jab cart mein kuch ho */}
-          <div 
-            className={`h-full transition-all duration-700 ease-in-out shrink-0 ${
-              isOverBudget ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'
-            }`}
-            style={{ width: `${Math.min(cartWidth, 100 - spentWidth)}%` }}
-          />
+          {!isLimitNotSet ? (
+            <>
+              <div 
+                className="h-full bg-blue-600 transition-all duration-500 ease-out border-r border-white/20 shrink-0"
+                style={{ width: `${Math.min(spentWidth, 100)}%` }}
+              />
+              <div 
+                className={`h-full transition-all duration-700 ease-in-out shrink-0 ${
+                  isOverBudget ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'
+                }`}
+                style={{ width: `${Math.min(cartWidth, 100 - spentWidth)}%` }}
+              />
+            </>
+          ) : (
+            /* Empty state bar jab budget set na ho */
+            <div className="w-full h-full bg-slate-200/50 flex items-center justify-center">
+               <span className="text-[8px] text-slate-400 uppercase tracking-widest font-bold text-center">Set limit to track progress</span>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -85,7 +95,12 @@ const BudgetTracker = ({ spent = 0, limit = 0, cartTotal = 0 }) => {
           </div>
 
           <div className="flex items-center gap-1">
-            {isOverBudget ? (
+            {isLimitNotSet ? (
+              <div className="flex items-center gap-1 text-slate-400">
+                <HelpCircle size={12} />
+                <p className="text-[10px] font-black uppercase italic">No Limit Active</p>
+              </div>
+            ) : isOverBudget ? (
               <div className="flex items-center gap-1 text-red-600">
                 <AlertCircle size={12} />
                 <p className="text-[10px] font-black uppercase italic">Over ₹{Math.abs(remaining).toLocaleString()}</p>
@@ -101,3 +116,4 @@ const BudgetTracker = ({ spent = 0, limit = 0, cartTotal = 0 }) => {
 };
 
 export default BudgetTracker;
+

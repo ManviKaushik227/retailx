@@ -1,6 +1,6 @@
 import React, { useContext, useEffect } from "react";
 import { CartContext } from "../context/CartContext";
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom"; // Link already imported
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
 import BudgetTracker from "../Components/BudgetTracker";
@@ -18,7 +18,7 @@ const Cart = () => {
   // Calculations
   const currentCartTotal = cartData?.items?.reduce((acc, item) => acc + item.price * item.quantity, 0) || 0;
   const realTimeSpent = (cartData?.spent || 0) + currentCartTotal;
-  const discount = currentCartTotal * 0.20; // 20% discount as shown in image
+  const discount = currentCartTotal * 0.20; 
   const deliveryFee = 15;
   const finalTotal = currentCartTotal - discount + deliveryFee;
 
@@ -60,9 +60,6 @@ const Cart = () => {
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 pt-28 pb-20">
-        {/* Breadcrumb */}
-        
-
         <h1 className="text-5xl font-black uppercase italic mb-10 tracking-tighter">Your Cart</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -78,16 +75,22 @@ const Cart = () => {
                   key={item.productId}
                 >
                   <div className="flex gap-4">
-                    <div className="w-28 h-28 bg-[#F0EEED] rounded-xl flex items-center justify-center overflow-hidden">
+                    {/* PRODUCT IMAGE - Wrapped with Link */}
+                    <Link 
+                      to={`/product/${item.productId}`} 
+                      className="w-28 h-28 bg-[#F0EEED] rounded-xl flex items-center justify-center overflow-hidden hover:opacity-80 transition-opacity cursor-pointer"
+                    >
                       <img src={item.imageURL || item.image} className="mix-blend-multiply object-contain w-20" alt={item.name} />
-                    </div>
+                    </Link>
                     
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-bold text-xl">{item.name}</h3>
-                          <p className="text-sm text-gray-400">Size: <span className="text-gray-500">Large</span></p>
-                          <p className="text-sm text-gray-400">Color: <span className="text-gray-500">Default</span></p>
+                          {/* PRODUCT NAME - Wrapped with Link */}
+                          <Link to={`/product/${item.productId}`} className="hover:underline decoration-2">
+                            <h3 className="font-bold text-xl">{item.name}</h3>
+                          </Link>
+                          
                         </div>
                         <button onClick={() => removeFromCart(item.productId)} className="text-red-500 hover:scale-110 transition-transform">
                           <Trash2 size={22} fill="currentColor" />
@@ -110,10 +113,8 @@ const Cart = () => {
             </AnimatePresence>
           </div>
 
-          {/* RIGHT: BUDGET & SUMMARY */}
+          {/* RIGHT SIDE (Budget, Summary, etc.) stays exactly the same */}
           <aside className="lg:col-span-5 space-y-6">
-            
-            {/* BUDGET TRACKER CARD */}
             <div className="border rounded-[20px] p-6 bg-white shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Monthly Budget</p>
@@ -128,7 +129,6 @@ const Cart = () => {
               />
             </div>
 
-            {/* ORDER SUMMARY CARD */}
             <div className="border rounded-[20px] p-6 bg-white shadow-sm">
               <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
               
@@ -154,7 +154,6 @@ const Cart = () => {
                 </div>
               </div>
 
-              {/* Promo Input */}
               <div className="mt-6 flex gap-3">
                 <div className="flex-1 flex items-center bg-[#F0F0F0] rounded-full px-4 py-3 gap-2">
                   <Tag className="text-gray-400" size={20} />
@@ -169,7 +168,6 @@ const Cart = () => {
                 </button>
               </Link>
 
-              {/* Over Budget Alert */}
               {cartData.monthlyBudget && realTimeSpent > cartData.monthlyBudget && (
                 <div className="mt-6 p-4 bg-red-50 text-red-600 rounded-2xl flex gap-3 items-center text-sm border border-red-100">
                   <AlertCircle size={20} />

@@ -1,7 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-import PaymentButton from "../components/PaymentButton";
+import PaymentButton from "../Components/PaymentButton";
 import {
   LockClosedIcon,
   PencilSquareIcon,
