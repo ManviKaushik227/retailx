@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./context/CartContext"; // 1. Provider Import kiya
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 /* PAGES */
 import LandingPage from "./pages/LandingPage";
@@ -22,6 +23,7 @@ import Deals from "./pages/Deals";
 import HelpCenter from "./pages/HelpCenter";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
+import OAuthSuccess from "./pages/OAuthSuccess";
 
 function App() {
   return (
@@ -64,6 +66,9 @@ function App() {
           
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<Terms />} />
+
+          <Route path="/oauth-success" element={<OAuthSuccess />} />
+
 
 
 

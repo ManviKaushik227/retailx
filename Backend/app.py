@@ -2,8 +2,9 @@ from flask import Flask
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1" 
 
-from extensions import mongo, bcrypt, jwt
+from extensions import mongo, bcrypt, jwt , mail
 
 # Existing routes
 from routes.auth_routes import auth_bp
@@ -30,6 +31,8 @@ from routes.public_ops import public_ops_bp
 
 from routes.complaint_routes import complaint_bp
 
+from routes.oauth import google_callback_bp
+
 
 load_dotenv()
 
@@ -49,6 +52,19 @@ app.config["JWT_HEADER_TYPE"] = "Bearer"
 
 app.config["JWT_ERROR_MESSAGE_KEY"] = "message"
 app.config["JWT_OPTIONS_IN_REQUEST"] = False
+
+
+app.config["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # local dev only
+app.secret_key = os.getenv("SECRET_KEY")  # ← YE ADD KARO
+
+app.config.update(
+    MAIL_SERVER='smtp.gmail.com',
+    MAIL_PORT=465,
+    MAIL_USE_SSL=True,
+    MAIL_USERNAME='adminretailx01@gmail.com',
+    MAIL_PASSWORD='emtoaozuoefnkzep'
+)
+mail.init_app(app)
 
 # INIT EXTENSIONS
 mongo.init_app(app)
@@ -81,11 +97,14 @@ app.register_blueprint(public_ops_bp, url_prefix='/api/public')
 app.register_blueprint(complaint_bp)
 
 
+app.register_blueprint(google_callback_bp)
+
 
 
 @app.route("/")
 def home():
     return "RetailX Backend Running 🚀"
+
 
 if __name__ == "__main__":
     with app.app_context():

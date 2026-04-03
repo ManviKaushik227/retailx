@@ -19,7 +19,7 @@ const CustomerDashboard = () => {
   const navigate = useNavigate();
 
   // --- FIX 1: Define user data from localStorage ---
-  const userName = localStorage.getItem("user_name") || "Guest";
+  const userName = localStorage.getItem("user_name") || localStorage.getItem("user.name")  || "Guest";
   
   // Safely parse userPrefs or default to an empty array
   const userPrefs = (() => {

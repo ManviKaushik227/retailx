@@ -7,6 +7,7 @@ from bson.objectid import ObjectId # Zaroori: ObjectId conversion ke liye
 import os
 import stripe
 from datetime import datetime
+from utils.email_utils import send_order_email  # <--- Ye line add kar
 
 orders_bp = Blueprint("orders", __name__, url_prefix="/api/orders")
 
@@ -54,6 +55,32 @@ def create_order():
             created_at=datetime.utcnow()
         )
 
+        
+        # ======================================================
+        # ✅ CHECK: MAIL BHEJNE KA SYSTEM WITH LOGS
+        # ======================================================
+        if result.inserted_id:
+            print(f"--- Attempting to send email to: {email} ---")
+            try:
+                # Pehle product ka naam nikaalna
+                p_name = items[0].get("name", "Exclusive Item") if items else "Order"
+                
+                # Email bhejne ki koshish
+                mail_status = send_order_email(email, p_name, total)
+                
+                if mail_status:
+                    print(f"🚀 SUCCESS: Email successfully sent to {email}")
+                else:
+                    print(f"⚠️ WARNING: send_order_email returned False")
+
+            except Exception as mail_err:
+                # Agar App Password galat hai ya net nahi hai toh yahan pakda jayega
+                print(f"❌ MAIL ERROR: Kuch toh gadbad hai! Details: {str(mail_err)}")
+        # ======================================================
+
+
+
+
         # 3. Update user's profile with latest contact/address
         User.save_contact_and_address(
             email=email,
@@ -63,6 +90,11 @@ def create_order():
             },
             address=address
         )
+       
+
+
+
+
 
         # ======================================================
         # NEW: BUDGET UPDATE & CART CLEARING (using ObjectId)

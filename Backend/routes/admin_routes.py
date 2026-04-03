@@ -12,17 +12,42 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 @admin_bp.route("/register", methods=["POST"])
 def register_admin():
     data = request.json
-    if not data.get("email") or not data.get("password"):
+    email = data.get("email")
+    password = data.get("password")
+    admin_key = data.get("adminKey") # Get the secret key from frontend
+
+    # 1. (Optional) Verify Secret Key
+    # Replace "YOUR_SECRET_KEY" with your actual secret code
+    if admin_key != os.getenv("ADMIN_SECRET_KEY"):
+        return jsonify({"message": "Invalid Admin Secret Key"}), 403
+
+    if not email or not password:
         return jsonify({"message": "Email and password required"}), 400
 
-    existing = Admin.find_by_email(data.get("email"))
+    existing = Admin.find_by_email(email)
     if existing:
         return jsonify({"message": "Admin already exists"}), 400
 
-    hashed = bcrypt.generate_password_hash(data.get("password")).decode("utf-8")
-    admin = {"email": data.get("email"), "password": hashed}
+    hashed = bcrypt.generate_password_hash(password).decode("utf-8")
+    
+    # 2. Add 'role' to the document for consistency
+    admin = {
+        "email": email, 
+        "password": hashed,
+        "role": "admin"
+    }
     mongo.db.admins.insert_one(admin)
-    return jsonify({"message": "Admin registered successfully"}), 201
+
+    # 3. FIX: Generate a token so the user is logged in immediately
+    token = create_access_token(
+        identity=email, 
+        additional_claims={"role": "admin"}
+    )
+
+    return jsonify({
+        "token": token, 
+        "message": "Admin registered successfully"
+    }), 201
 
 @admin_bp.route("/login", methods=["POST"])
 def login_admin():

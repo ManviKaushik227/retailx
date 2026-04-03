@@ -224,6 +224,32 @@ if (mode === "register") {
                   </>
                 )}
               </button>
+
+
+              {/* Google Sign-In Button — add below your submit button, inside the form */}
+<div className="relative my-2">
+  <div className="absolute inset-0 flex items-center">
+    <div className="w-full border-t border-slate-100" />
+  </div>
+  <div className="relative flex justify-center text-xs">
+    <span className="bg-white px-3 text-slate-400">or continue with</span>
+  </div>
+</div>
+
+<a
+  href="http://localhost:5000/api/auth/google/login"
+  className="w-full flex items-center justify-center gap-3 py-2.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-all"
+>
+  <img
+    src="https://www.svgrepo.com/show/475656/google-color.svg"
+    alt="Google"
+    className="w-4 h-4"
+  />
+  Continue with Google
+</a>
+
+
+
             </form>
 
             <div className="mt-8 pt-6 border-t border-slate-50 text-center">
