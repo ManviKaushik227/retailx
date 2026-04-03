@@ -117,7 +117,7 @@ const UserDashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("userToken");
-    window.location.href = "/login";
+    window.location.href = "/";
   };
 
   if (!data) return (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion"; // Add this for animations
+import { motion, AnimatePresence } from "framer-motion";
+import Swal from "sweetalert2"; // Ensure this is imported
 import {
   Star,
   Plus,
@@ -46,7 +47,6 @@ const ProductPage = () => {
         const res = await fetch(`http://localhost:5000/api/products/${id}`);
         const data = await res.json();
         setCurrentProduct(data);
-        console.log("Current Product Data:", data);
         window.scrollTo(0, 0);
 
         if (token) {
@@ -79,12 +79,29 @@ const ProductPage = () => {
   }, [id]);
 
   /* ---------------- HELPERS ---------------- */
+  
+  // Professional Wishlist Toggle with Redirect
   const handleWishlistToggle = async () => {
     const token = localStorage.getItem("userToken");
+    
     if (!token) {
-      alert("Bhai, pehle login toh kar lo!");
-      return navigate("/login");
+      Swal.fire({
+        title: "Sign in Required",
+        text: "Apne favorites ko save karne ke liye login karein!",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonColor: "#000",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Login Now",
+        cancelButtonText: "Later"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          navigate("/auth");
+        }
+      });
+      return;
     }
+
     setIsFavorite(!isFavorite);
     try {
       const res = await fetch(`http://localhost:5000/api/wishlist/toggle`, {
@@ -95,10 +112,41 @@ const ProductPage = () => {
         },
         body: JSON.stringify({ productId: id }),
       });
-      if (!res.ok) setIsFavorite(isFavorite);
+      if (!res.ok) setIsFavorite(!isFavorite);
     } catch (err) {
-      setIsFavorite(isFavorite);
+      setIsFavorite(!isFavorite);
     }
+  };
+
+  // Professional Add to Cart with Auth Check
+  const handleAddToCart = () => {
+    const token = localStorage.getItem("userToken");
+    const user = localStorage.getItem("user");
+    
+    if (isInCart) {
+      return navigate("/cart");
+    }
+
+    if (!token) {
+      Swal.fire({
+        title: "Login Required",
+        text: "Shopping shuru karne ke liye pehle login karein.",
+        icon: "warning",
+        confirmButtonText: "Go to Login",
+        confirmButtonColor: "#000",
+        showCancelButton: true,
+      }).then((result) => {
+        if (result.isConfirmed) navigate("/auth");
+      });
+      return;
+    }
+
+    addToCart({
+      productId: currentProduct._id || currentProduct.id,
+      name: currentProduct.name,
+      price: currentProduct.finalPrice,
+      image: currentProduct.imageURL,
+    });
   };
 
   const toggleAddon = (prod) => {
@@ -111,6 +159,12 @@ const ProductPage = () => {
   };
 
   const handleBundleBuy = async () => {
+    const token = localStorage.getItem("userToken");
+    if (!token) {
+      Swal.fire({ title: "Login Required", icon: "warning", confirmButtonColor: "#000" }).then(() => navigate("/auth"));
+      return;
+    }
+
     if (!isInCart && currentProduct) {
       await addToCart({
         productId: currentProduct._id || currentProduct.id,
@@ -138,7 +192,23 @@ const ProductPage = () => {
       behavior: "smooth",
     });
   };
+  const handleDirectCheckout = () => {
+  if (!currentProduct) return;
 
+  // Checkout page par data bhej rahe hain
+  navigate("/checkout", { 
+    state: { 
+      items: [{
+        productId: currentProduct._id || currentProduct.id,
+        name: currentProduct.name,
+        price: currentProduct.finalPrice,
+        image: currentProduct.imageURL,
+        quantity: 1 
+      }],
+      total: currentProduct.finalPrice // Checkout.jsx 'total' key expect kar raha hai
+    } 
+  });
+};
   if (loading)
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-6 bg-white">
@@ -163,6 +233,7 @@ const ProductPage = () => {
         </nav>
 
         <div className="flex flex-col lg:flex-row gap-16 xl:gap-24 items-start">
+          {/* IMAGE SECTION */}
           <div className="w-full lg:w-[55%] space-y-6">
             <div className="aspect-[4/5] bg-[#F7F7F7] rounded-sm flex items-center justify-center p-12 relative overflow-hidden group">
               <img
@@ -184,6 +255,7 @@ const ProductPage = () => {
             </div>
           </div>
 
+          {/* CONTENT SECTION */}
           <div className="w-full lg:w-[45%] lg:sticky lg:top-32 space-y-8">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.3em] text-gray-400">{currentProduct?.brand}</p>
@@ -199,7 +271,6 @@ const ProductPage = () => {
               </div>
             </div>
 
-            {/* ✅ FLASH DEAL & PRICE LOGIC INTEGRATED */}
             <div className="flex items-baseline gap-4">
               <span className="text-3xl font-light text-black">
                 ₹{currentProduct?.finalPrice?.toLocaleString()}
@@ -227,23 +298,26 @@ const ProductPage = () => {
               )}
             </div>
 
+            {/* ACTION BUTTONS */}
             <div className="space-y-3 pt-6">
               <button
-                onClick={() => isInCart ? navigate("/cart") : addToCart({
-                  productId: currentProduct._id || currentProduct.id,
-                  name: currentProduct.name,
-                  price: currentProduct.finalPrice,
-                  image: currentProduct.imageURL,
-                })}
+                onClick={handleAddToCart}
                 className={`w-full py-5 rounded-full font-bold text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all duration-300 ${
                   isInCart ? "bg-gray-100 text-black border border-gray-200" : "bg-black text-white hover:bg-gray-800"
                 }`}
               >
                 {isInCart ? <><Check size={16} /> Added to Bag</> : <><ShoppingBag size={16} /> Add to Bag</>}
               </button>
-              <button onClick={() => navigate("/checkout")} className="w-full py-5 rounded-full font-bold text-[11px] uppercase tracking-[0.2em] border border-black hover:bg-black hover:text-white transition-all">
-                Direct Checkout
-              </button>
+
+              {/* ✅ Conditional Direct Checkout */}
+              {localStorage.getItem("userToken") && (
+                <button 
+                  onClick={handleDirectCheckout}
+                  className="w-full py-5 rounded-full font-bold text-[11px] uppercase tracking-[0.2em] border border-black hover:bg-black hover:text-white transition-all"
+                >
+                  Direct Checkout
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-4 py-8 border-y border-gray-100">

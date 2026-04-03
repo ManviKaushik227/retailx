@@ -154,14 +154,7 @@ const Cart = () => {
                 </div>
               </div>
 
-              <div className="mt-6 flex gap-3">
-                <div className="flex-1 flex items-center bg-[#F0F0F0] rounded-full px-4 py-3 gap-2">
-                  <Tag className="text-gray-400" size={20} />
-                  <input type="text" placeholder="Add promo code" className="bg-transparent outline-none w-full text-sm" />
-                </div>
-                <button className="bg-black text-white px-8 py-3 rounded-full font-medium hover:bg-gray-800 transition-colors">Apply</button>
-              </div>
-
+             
               <Link to="/checkout" state={{ total: finalTotal }} className="block mt-6">
                 <button className="w-full bg-black text-white py-4 rounded-full font-bold flex items-center justify-center gap-3 hover:gap-5 transition-all">
                   Go to Checkout <ArrowRight size={20} />

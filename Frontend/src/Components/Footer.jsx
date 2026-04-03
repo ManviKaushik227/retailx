@@ -19,9 +19,8 @@ export default function Footer() {
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
           <ul className="space-y-2 text-sm">
-            <li className="hover:text-white cursor-pointer">Home</li>
-            <li className="hover:text-white cursor-pointer">Categories</li>
-            <li className="hover:text-white cursor-pointer">Deals</li>
+            <li className="hover:text-white cursor-pointer"><Link to={"/help-center"}>Help & Support</Link></li>
+            <li className="hover:text-white cursor-pointer"><Link to={"/deals"}>Deals</Link></li>
           </ul>
         </div>
 
@@ -29,10 +28,8 @@ export default function Footer() {
         <div>
           <h3 className="text-lg font-semibold text-white mb-4">Support</h3>
           <ul className="space-y-2 text-sm">
-            <li className="hover:text-white cursor-pointer"><Link to={"/help-center"}>Help & Support</Link></li>
-            <li className="hover:text-white cursor-pointer">Returns</li>
-            <li className="hover:text-white cursor-pointer">Privacy Policy</li>
-            <li className="hover:text-white cursor-pointer">Terms & Conditions</li>
+            <li className="hover:text-white cursor-pointer"><Link to={"/privacy"}>Privacy Policy</Link></li>
+            <li className="hover:text-white cursor-pointer"><Link to={"/terms"}>Terms & Conditions</Link></li>
           </ul>
         </div>
 
@@ -43,12 +40,7 @@ export default function Footer() {
             Email: support@retailx.com
           </p>
 
-          <div className="flex gap-4 mt-4">
-            <Facebook className="hover:text-white cursor-pointer" />
-            <Twitter className="hover:text-white cursor-pointer" />
-            <Linkedin className="hover:text-white cursor-pointer" />
-            <Mail className="hover:text-white cursor-pointer" />
-          </div>
+          
         </div>
       </div>
 

@@ -8,43 +8,69 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
-  const { cartData, fetchCart } = useContext(CartContext);
+  const { cartData, fetchCart,clearCart } = useContext(CartContext);
 
-  // Helper function to get user from storage safely
+  // --- 1. User Fetching Logic (Updated with Email) ---
   const getStoredUser = () => {
-    const savedUser = localStorage.getItem("user");
-    if (!savedUser || savedUser === "undefined" || savedUser === "null") return null;
-    try {
-      return JSON.parse(savedUser);
-    } catch (e) {
-      return null;
-    }
+    const token = localStorage.getItem("userToken");
+    const name = localStorage.getItem("user_name");
+    const email = localStorage.getItem("user_email"); // Ensure you save this during login
+
+    if (!token) return null;
+
+    return {
+      token: token,
+      name: name || "Shopper",
+      email: email || "User"
+    };
   };
 
   useEffect(() => {
-    // 1. Initial check
+    // Initial Load
     const currentUser = getStoredUser();
     setUser(currentUser);
     if (currentUser) fetchCart();
 
-    // 2. Listen for changes in localStorage (Login/Logout across tabs or components)
-    const handleStorageChange = () => {
+    // Listener for Cross-tab or Custom Login Events
+    const handleAuthChange = () => {
       const updatedUser = getStoredUser();
       setUser(updatedUser);
       if (updatedUser) fetchCart();
+      else setUser(null); // Explicitly null if no token
     };
 
-    window.addEventListener("storage", handleStorageChange);
-    
-    // Custom event listener agar same window mein update ho raha hai
-    window.addEventListener("userLoginStateChange", handleStorageChange);
+    window.addEventListener("storage", handleAuthChange);
+    window.addEventListener("userLoginStateChange", handleAuthChange);
 
     return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("userLoginStateChange", handleStorageChange);
+      window.removeEventListener("storage", handleAuthChange);
+      window.removeEventListener("userLoginStateChange", handleAuthChange);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
+
+  // --- 2. Fixed Logout Logic (No More Double Click) ---
+  const handleLogout = () => {
+    // Clear all auth data
+    localStorage.clear();
+    localStorage.removeItem("userToken");
+    localStorage.removeItem("user_name");
+    localStorage.removeItem("user_email");
+    localStorage.removeItem("user_preferences");
+    localStorage.removeItem("user");
+    localStorage.clear();
+
+    if (clearCart) clearCart();
+    
+    // Reset React State immediately
+    setUser(null);
+    
+    // Trigger custom event for other components if needed
+    window.dispatchEvent(new Event("userLoginStateChange"));
+    
+    // Redirect to home and FORCE REFRESH to clear any lingering context
+    navigate("/");
+    window.location.reload(); 
+  };
 
   const isLoggedIn = !!user;
   const cartCount = cartData?.items?.reduce((sum, item) => sum + (Number(item.quantity) || 1), 0) || 0;
@@ -55,15 +81,6 @@ export default function Navbar() {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery("");
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    setUser(null);
-    navigate("/");
-    // Reload zaroori hai agar context clear karna ho
-    window.location.reload();
   };
 
   const CATEGORIES = [
@@ -85,7 +102,8 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 w-full z-[100] bg-white/80 backdrop-blur-md border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-
+        
+        {/* Logo & Search */}
         <div className="flex items-center gap-10">
           <Link to={isLoggedIn ? "/customer-dashboard" : "/"} className="text-xl font-bold text-slate-900 tracking-tight">
             Retail<span className="text-emerald-600">X</span>
@@ -103,10 +121,12 @@ export default function Navbar() {
           </form>
         </div>
 
+        {/* Navigation Links */}
         <div className="flex items-center gap-8">
           <div className="hidden md:flex items-center gap-7">
             <NavLink to={isLoggedIn ? "/customer-dashboard" : "/"}>Home</NavLink>
 
+            {/* Categories Dropdown */}
             <div className="relative group">
               <button className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-emerald-600 transition-colors py-5">
                 Categories <ChevronDown className="h-3.5 w-3.5 opacity-50 group-hover:rotate-180 transition-transform duration-300" />
@@ -144,6 +164,7 @@ export default function Navbar() {
 
           <div className="h-6 w-px bg-slate-200 hidden md:block" />
 
+          {/* User Actions */}
           <div className="flex items-center gap-3">
             <Link to="/cart" className="relative p-2 rounded-full hover:bg-slate-50">
               <ShoppingCart className="h-5 w-5 text-slate-600 hover:text-emerald-600" />
@@ -170,7 +191,8 @@ export default function Navbar() {
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                   <div className="px-4 py-3 border-b border-slate-50">
                     <p className="text-xs text-slate-400 font-medium">Signed in as</p>
-                    <p className="text-sm font-semibold text-slate-700 truncate">{user.email || 'User'}</p>
+                    {/* Safe check with optional chaining */}
+                    <p className="text-sm font-semibold text-slate-700 truncate">{user?.email || user?.name || 'User'}</p>
                   </div>
                   <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50 text-slate-700">
                     <LayoutDashboard className="h-4 w-4" /> Dashboard

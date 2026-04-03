@@ -161,6 +161,20 @@ export const CartProvider = ({ children }) => {
     fetchCart();
   }, [fetchCart]);
 
+
+  /* =======================
+      CLEAR CART (Logout ke liye)
+     ======================= */
+  const clearCart = () => {
+    setCartData({
+      items: [],
+      spent: 0,
+      monthlyBudget: null,
+      percentUsed: 0,
+      remaining: null
+    });
+  };
+
   return (
     <CartContext.Provider value={{
       cartData,
@@ -168,7 +182,8 @@ export const CartProvider = ({ children }) => {
       fetchCart,
       updateQuantity,
       removeFromCart,
-      updateBudget
+      updateBudget,
+      clearCart
     }}>
       {children}
     </CartContext.Provider>

@@ -20,6 +20,8 @@ import CategoryPage from "./pages/CategoryPage";
 import Wishlist from "./pages/Wishlist";
 import Deals from "./pages/Deals";
 import HelpCenter from "./pages/HelpCenter";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
 
 function App() {
   return (
@@ -58,6 +60,10 @@ function App() {
           <Route path="/deals" element={<Deals />} />
 
           <Route path="/help-center" element={<HelpCenter />} />
+
+          
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
 
 
 

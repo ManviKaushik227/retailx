@@ -24,7 +24,7 @@ const CustomerDashboard = () => {
   // Safely parse userPrefs or default to an empty array
   const userPrefs = (() => {
     try {
-      const prefs = localStorage.getItem("user_prefs");
+      const prefs = localStorage.getItem("user_prefrences");
       return prefs ? JSON.parse(prefs) : [];
     } catch (e) {
       return [];
