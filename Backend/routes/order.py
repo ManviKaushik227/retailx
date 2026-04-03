@@ -9,6 +9,7 @@ import stripe
 from datetime import datetime
 from utils.email_utils import send_order_email  # <--- Ye line add kar
 
+
 orders_bp = Blueprint("orders", __name__, url_prefix="/api/orders")
 
 @orders_bp.route("/create", methods=["POST"])
@@ -22,33 +23,65 @@ def create_order():
         address = data.get("address")
         items = data.get("items")
         total = data.get("total")
+        raw_items = data.get("items")  # Frontend se aayi list
 
         if not session_id:
             return jsonify({"error": "No session ID provided"}), 400
+        
+        processed_items = []
+        for item in raw_items:
+            try:
+                # 1. Get ID safely
+                p_id = item.get('productId') or item.get('id') or item.get('_id')
+                
+                product_doc = None
+                # 2. Only query if p_id is a valid 24-char hex string (MongoDB format)
+                if p_id and len(str(p_id)) == 24:
+                    product_doc = mongo.db.products.find_one({"_id": ObjectId(p_id)})
+                
+                if product_doc:
+                    # DB se fresh data lo including seller_email
+                    item_data = {
+                        "productId": str(product_doc["_id"]),
+                        "name": product_doc.get("name"),
+                        "price": product_doc.get("finalPrice", item.get("price")),
+                        "quantity": item.get("quantity", 1),
+                        "image": product_doc.get("imageURL") or item.get("image"),
+                        "seller_email": product_doc.get("seller_email") # <--- Ye line main hai
+                    }
+                    processed_items.append(item_data)
+                else:
+                    # Agar product nahi mila, toh crash mat karo, jo frontend se aaya wahi bhej do
+                    processed_items.append(item)
+                    
+            except Exception as e:
+                # Agar kisi ek item mein error aaye toh baaki order kharab na ho
+                print(f"Item processing skip: {e}")
+                processed_items.append(item)
+        # -----------------------------------------------------
+        # -----------------------------------------------------
 
-        # Initialize Stripe
+        # --- 💳 STEP 2: Stripe Payment Intent Fetch ---
         stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
-
-        # Retrieve session
         session = stripe.checkout.Session.retrieve(session_id)
         payment_id = session.payment_intent 
 
-        # Prevent duplicate orders
+        # Duplicate order check
         existing_order = mongo.db.orders.find_one({"payment_id": payment_id})
         if existing_order:
             return jsonify({"message": "Order already recorded", "order_id": str(existing_order["_id"])}), 200
 
-        # 1. Fetch User to get their ObjectId
+        # --- 👤 STEP 3: User Info for Profile & Budget ---
         user_info = mongo.db.users.find_one({"email": email})
         if not user_info:
-            return jsonify({"error": "User not found in database"}), 404
+            return jsonify({"error": "User not found"}), 404
         
-        actual_user_id = user_info["_id"] # Ye already ObjectId format mein hai
+        actual_user_id = user_info["_id"]
 
-        # 2. Save order to DB
+        # --- 📝 STEP 4: Save Order to DB ---
         result = Order.create_order(
             email=email,
-            items=items,
+            items=processed_items, # <--- Injected with seller_email
             total=float(total),
             address_details=address,
             payment_id=payment_id,
